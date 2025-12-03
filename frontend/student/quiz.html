@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sınav - Okuma Geliştirme</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .option-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .option-card.selected {
+            border-color: #667eea;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="dashboard.html" class="text-purple-600 hover:text-purple-700 mr-4">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </a>
+                    <span class="text-xl font-bold text-gray-800">Anlama Sınavı</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-sm font-semibold text-gray-800" id="userName">Yükleniyor...</p>
+                    </div>
+                    <button onclick="performLogout()" class="text-red-600 hover:text-red-700">
+                        <i class="fas fa-sign-out-alt text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Story Header -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2" id="storyTitle">Yükleniyor...</h1>
+            <p class="text-gray-600">
+                <i class="fas fa-info-circle mr-2"></i>
+                Hikâyeyi okuyarak soruları cevaplayın. Metin ekranda kalacak.
+            </p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6">
+            <!-- Story Text (Left) -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-md p-6 sticky top-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-book-open mr-2 text-purple-600"></i>
+                        Hikâye Metni
+                    </h3>
+                    <div id="storyText" class="text-gray-700 text-sm leading-relaxed max-h-[600px] overflow-y-auto">
+                        <div class="text-center py-12">
+                            <i class="fas fa-spinner fa-spin text-4xl text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Questions (Right) -->
+            <div class="lg:col-span-2">
+                <!-- Progress Indicator -->
+                <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-semibold text-gray-700">İlerleme</span>
+                        <span class="text-sm text-gray-600"><span id="answeredCount">0</span>/5 Cevaplandı</span>
+                    </div>
+                    <div class="bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-purple-600 rounded-full h-2 transition-all" style="width: 0%">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questions Container -->
+                <div id="questionsContainer">
+                    <div class="text-center py-12">
+                        <i class="fas fa-spinner fa-spin text-4xl text-purple-600"></i>
+                        <p class="text-gray-600 mt-4">Sorular yükleniyor...</p>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="bg-white rounded-xl shadow-md p-6 hidden" id="submitContainer">
+                    <button id="submitBtn"
+                        class="w-full gradient-bg text-white py-4 rounded-lg font-bold text-lg hover:opacity-90 transition">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Cevapları Gönder
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+                <div class="text-center">
+                    <div class="inline-block bg-green-100 rounded-full p-4 mb-4">
+                        <i class="fas fa-check-circle text-6xl text-green-600"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Tebrikler!</h2>
+                    <p class="text-gray-600 mb-6">Sınavını başarıyla tamamladın. Cevapların kaydedildi.</p>
+
+                    <div class="flex space-x-3">
+                        <button onclick="window.location.href='progress.html?id=' + storyId"
+                            class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition">
+                            <i class="fas fa-chart-line mr-2"></i>İlerlemeyi Gör
+                        </button>
+                        <button onclick="window.location.href='dashboard.html'"
+                            class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition">
+                            <i class="fas fa-home mr-2"></i>Ana Sayfa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        // Check authentication
+        if (!checkAuth()) {
+            window.location.href = '../login.html';
+        }
+
+        const user = getCurrentUserInfo();
+        document.getElementById('userName').textContent = user.ad_soyad;
+
+        // Get story ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const storyId = urlParams.get('id');
+
+        if (!storyId) {
+            alert('Hikâye bulunamadı!');
+            window.location.href = 'dashboard.html';
+        }
+
+        let story = null;
+        let questions = [];
+        const answers = {
+            q1: null,
+            q2: null,
+            q3: null,
+            q4: null
+        };
+
+        // Load story and questions
+        async function loadData() {
+            try {
+                // Load story
+                story = await API.getStory(storyId);
+                document.getElementById('storyTitle').textContent = story.baslik;
+                document.getElementById('storyText').innerHTML = story.metin.replace(/\n/g, '<br><br>');
+
+                // Load questions
+                questions = await API.getQuizQuestions(storyId);
+                renderQuestions();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                alert('Veriler yüklenirken hata oluştu!');
+                window.location.href = 'dashboard.html';
+            }
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+
+            if (questions.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                        <i class="fas fa-exclamation-circle text-4xl text-yellow-500 mb-4"></i>
+                        <p class="text-gray-600">Bu hikâye için henüz soru eklenmemiş.</p>
+                        <button onclick="window.location.href='dashboard.html'" class="mt-4 bg-purple-600 text-white px-6 py-2 rounded-lg">Geri Dön</button>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            // Multiple Choice Questions
+            questions.forEach((q, index) => {
+                html += `
+                    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">
+                            <span class="bg-purple-600 text-white w-8 h-8 rounded-full inline-flex items-center justify-center mr-2">${index + 1}</span>
+                            ${q.question_text}
+                        </h3>
+                        <div class="space-y-3">
+                            ${renderOption(q.id, 'A', q.option_a, index)}
+                            ${renderOption(q.id, 'B', q.option_b, index)}
+                            ${renderOption(q.id, 'C', q.option_c, index)}
+                            ${renderOption(q.id, 'D', q.option_d, index)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Open Ended Question
+            html += `
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        <span class="bg-blue-600 text-white w-8 h-8 rounded-full inline-flex items-center justify-center mr-2">${questions.length + 1}</span>
+                        Bu hikâyeden ne öğrendin? Kendi cümlelerinle açıkla.
+                    </h3>
+                    <textarea id="openEnded" rows="6"
+                        class="w-full border-2 border-gray-200 rounded-lg p-4 focus:border-purple-600 focus:outline-none"
+                        placeholder="Cevabını buraya yaz..."></textarea>
+                    <p class="text-sm text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        En az 2-3 cümle yazmalısın.
+                    </p>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            document.getElementById('submitContainer').classList.remove('hidden');
+
+            // Add event listeners
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.addEventListener('click', handleOptionClick);
+            });
+
+            document.getElementById('openEnded').addEventListener('input', updateProgress);
+            document.getElementById('submitBtn').addEventListener('click', submitAnswers);
+        }
+
+        function renderOption(questionId, value, text, index) {
+            return `
+                <div class="option-card border-2 border-gray-200 rounded-lg p-4" 
+                     data-question="q${index + 1}" data-value="${value}">
+                    <div class="flex items-center">
+                        <div class="w-6 h-6 rounded-full border-2 border-gray-300 mr-3 flex items-center justify-center">
+                            <div class="w-3 h-3 rounded-full bg-purple-600 hidden"></div>
+                        </div>
+                        <span class="font-semibold text-gray-700 mr-2">${value})</span>
+                        <span class="text-gray-700">${text}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleOptionClick() {
+            const question = this.dataset.question;
+            const value = this.dataset.value;
+
+            // Remove selection from other options in same question
+            document.querySelectorAll(`[data-question="${question}"]`).forEach(opt => {
+                opt.classList.remove('selected');
+                opt.querySelector('.w-3').classList.add('hidden');
+            });
+
+            // Select this option
+            this.classList.add('selected');
+            this.querySelector('.w-3').classList.remove('hidden');
+
+            // Save answer
+            answers[question] = value;
+
+            // Update progress
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const answered = Object.values(answers).filter(a => a !== null).length;
+            const openEnded = document.getElementById('openEnded') ? document.getElementById('openEnded').value.trim() : '';
+            const total = openEnded.length > 10 ? answered + 1 : answered;
+            const maxQuestions = questions.length + 1;
+
+            document.getElementById('answeredCount').textContent = total;
+            document.getElementById('progressBar').style.width = (total / maxQuestions * 100) + '%';
+        }
+
+        async function submitAnswers() {
+            // Validate all questions answered
+            const unanswered = Object.values(answers).filter(a => a === null);
+            if (unanswered.length > 0) {
+                alert('Lütfen tüm çoktan seçmeli soruları cevaplayın!');
+                return;
+            }
+
+            const openEnded = document.getElementById('openEnded').value.trim();
+            if (openEnded.length < 10) {
+                alert('Lütfen açık uçlu soruya en az 2-3 cümle yazın!');
+                return;
+            }
+
+            // Prepare data
+            const answerData = {
+                story_id: parseInt(storyId),
+                q1: answers.q1,
+                q2: answers.q2,
+                q3: answers.q3,
+                q4: answers.q4,
+                acik_uclu: openEnded
+            };
+
+            try {
+                await API.saveAnswers(answerData);
+
+                // Show success modal
+                document.getElementById('successModal').classList.remove('hidden');
+                document.getElementById('successModal').classList.add('flex');
+            } catch (error) {
+                console.error('Error saving answers:', error);
+                alert('Cevaplar kaydedilirken hata oluştu!');
+            }
+        }
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+
+</html>

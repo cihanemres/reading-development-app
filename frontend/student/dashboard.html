@@ -1,0 +1,212 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Öğrenci Paneli - Okuma Geliştirme</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/theme.css">
+    <link rel="stylesheet" href="../css/animations.css">
+    <link rel="stylesheet" href="../css/mobile.css">
+    <link rel="stylesheet" href="../css/notifications.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-book-reader text-2xl text-purple-600 mr-3"></i>
+                    <span class="text-xl font-bold text-gray-800">Öğrenci Paneli</span>
+                </div>
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <div class="text-right hidden md:block">
+                        <p class="text-sm font-semibold text-gray-800" id="userName">Yükleniyor...</p>
+                        <p class="text-xs text-gray-500" id="userGrade"></p>
+                    </div>
+                    <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 transition" title="Tema">
+                        <i class="fas fa-moon text-gray-600"></i>
+                    </button>
+                    <button onclick="window.location.href='../profile.html'"
+                        class="hidden md:block text-purple-600 hover:text-purple-700" title="Profil">
+                        <i class="fas fa-user-cog text-xl"></i>
+                    </button>
+                    <button onclick="logout()" class="text-red-600 hover:text-red-700">
+                        <i class="fas fa-sign-out-alt text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        <div class="gradient-bg text-white rounded-xl p-6 md:p-8 mb-6 md:mb-8">
+            <h1 class="text-2xl md:text-3xl font-bold mb-2">Hoş Geldin! 👋</h1>
+            <p class="text-purple-100 text-sm md:text-base">Okuma becerilerini geliştirmek için hazır mısın?</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-xs md:text-sm">Okunan Hikâyeler</p>
+                        <p class="text-2xl md:text-3xl font-bold text-purple-600" id="totalStories">0</p>
+                    </div>
+                    <i class="fas fa-book text-3xl md:text-4xl text-purple-200"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-xs md:text-sm">Pratik Sayısı</p>
+                        <p class="text-2xl md:text-3xl font-bold text-blue-600" id="totalPractice">0</p>
+                    </div>
+                    <i class="fas fa-redo text-3xl md:text-4xl text-blue-200"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-xs md:text-sm">Ortalama Hız</p>
+                        <p class="text-2xl md:text-3xl font-bold text-green-600" id="avgSpeed">0</p>
+                        <p class="text-xs text-gray-500">kelime/dakika</p>
+                    </div>
+                    <i class="fas fa-tachometer-alt text-3xl md:text-4xl text-green-200"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-800">Hikâyeler</h2>
+                <div class="relative w-full md:w-64">
+                    <input type="text" id="storySearch" placeholder="Hikâye ara..."
+                        class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+            <div id="storiesLoading" class="text-center py-8 md:py-12">
+                <i class="fas fa-spinner fa-spin text-3xl md:text-4xl text-purple-600"></i>
+                <p class="text-gray-600 mt-4">Hikâyeler yükleniyor...</p>
+            </div>
+            <div id="storiesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 hidden">
+            </div>
+            <div id="noStories" class="text-center py-8 md:py-12 hidden">
+                <i class="fas fa-book-open text-5xl md:text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-600">Henüz hikâye bulunmuyor.</p>
+            </div>
+        </div>
+    </div>
+    <script src="../js/theme.js"></script>
+    <script src="../js/loading.js"></script>
+    <script src="../js/notifications.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/search.js"></script>
+    <script>
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '../login.html';
+        }
+
+        if (!checkAuth()) {
+            window.location.href = '../login.html';
+        }
+
+        const user = getCurrentUserInfo();
+        if (user.rol !== 'ogrenci') {
+            alert('Bu sayfaya erişim yetkiniz yok!');
+            window.location.href = '../login.html';
+        }
+
+        document.getElementById('userName').textContent = user.ad_soyad;
+        document.getElementById('userGrade').textContent = `${user.sinif_duzeyi}. Sınıf`;
+
+        async function loadProgressSummary() {
+            try {
+                const progress = await API.getMyProgress();
+                if (progress.summary) {
+                    document.getElementById('totalStories').textContent = progress.summary.total_stories || 0;
+                    document.getElementById('totalPractice').textContent = progress.summary.total_practice_sessions || 0;
+                    document.getElementById('avgSpeed').textContent = Math.round(progress.summary.average_speed_wpm || 0);
+                }
+            } catch (error) {
+                console.error('Error loading progress:', error);
+            }
+        }
+
+        async function loadStories(searchTerm = null) {
+            const storiesLoading = document.getElementById('storiesLoading');
+            const storiesContainer = document.getElementById('storiesContainer');
+            const noStories = document.getElementById('noStories');
+
+            if (searchTerm !== null || storiesContainer.children.length === 0) {
+                storiesLoading.classList.remove('hidden');
+                storiesContainer.classList.add('hidden');
+                noStories.classList.add('hidden');
+            }
+
+            try {
+                if (searchTerm !== null) {
+                    storiesContainer.innerHTML = '';
+                }
+
+                const stories = await API.getStories(user.sinif_duzeyi, searchTerm);
+                storiesLoading.classList.add('hidden');
+
+                if (stories && stories.length > 0) {
+                    storiesContainer.classList.remove('hidden');
+                    storiesContainer.innerHTML = '';
+                    stories.forEach(story => {
+                        storiesContainer.appendChild(createStoryCard(story));
+                    });
+                } else {
+                    noStories.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading stories:', error);
+                storiesLoading.innerHTML = '<i class="fas fa-exclamation-triangle text-4xl text-red-600"></i><p class="text-red-600 mt-4">Hikâyeler yüklenirken hata oluştu.</p>';
+            }
+        }
+
+        function createStoryCard(story) {
+            const card = document.createElement('div');
+            card.className = 'bg-gray-50 rounded-lg p-4 md:p-6 hover:shadow-lg transition cursor-pointer';
+            card.onclick = () => window.location.href = `story-view.html?id=${story.id}`;
+            card.innerHTML = `
+                <div class="flex items-start justify-between mb-3 md:mb-4">
+                    <div class="bg-purple-100 w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-book text-purple-600 text-lg md:text-xl"></i>
+                    </div>
+                    <span class="bg-purple-600 text-white text-xs px-2 py-1 rounded">${story.sinif_duzeyi}. Sınıf</span>
+                </div>
+                <h3 class="text-base md:text-lg font-bold text-gray-800 mb-2">${story.baslik}</h3>
+                <p class="text-gray-600 text-sm mb-3 md:mb-4 line-clamp-2">${story.metin.substring(0, 100)}...</p>
+                <div class="flex items-center justify-between text-xs md:text-sm text-gray-500">
+                    <span><i class="fas fa-file-word mr-1"></i>${story.kelime_sayisi || 0} kelime</span>
+                    ${story.ses_dosyasi ? '<i class="fas fa-volume-up text-blue-600"></i>' : ''}
+                </div>
+            `;
+            return card;
+        }
+
+        loadProgressSummary();
+        loadStories();
+        SearchUtils.setupSearch('storySearch', (value) => {
+            loadStories(value);
+        });
+    </script>
+</body>
+
+</html>

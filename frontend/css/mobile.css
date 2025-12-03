@@ -1,0 +1,357 @@
+/**
+ * Mobile Responsiveness Styles
+ * Touch-friendly, responsive design for all devices
+ */
+
+/* ===== TOUCH OPTIMIZATIONS ===== */
+
+/* Minimum touch target size */
+.touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Prevent zoom on input focus (iOS) */
+input,
+select,
+textarea {
+    font-size: 16px !important;
+}
+
+/* Better tap highlighting */
+* {
+    -webkit-tap-highlight-color: rgba(103, 126, 234, 0.2);
+}
+
+/* ===== MOBILE MENU ===== */
+
+.mobile-menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.mobile-menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mobile-menu {
+    position: fixed;
+    top: 0;
+    right: -280px;
+    width: 280px;
+    height: 100%;
+    background: white;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    transition: right 0.3s ease-out;
+    overflow-y: auto;
+}
+
+.mobile-menu.active {
+    right: 0;
+}
+
+.mobile-menu-header {
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mobile-menu-close {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #f3f4f6;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.mobile-menu-close:hover {
+    background: #e5e7eb;
+}
+
+.mobile-menu-items {
+    padding: 20px;
+}
+
+.mobile-menu-item {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.mobile-menu-item:hover {
+    background: #f3f4f6;
+}
+
+.mobile-menu-item i {
+    width: 24px;
+    text-align: center;
+}
+
+/* ===== RESPONSIVE TABLES ===== */
+
+.responsive-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -16px;
+    padding: 0 16px;
+}
+
+@media (max-width: 767px) {
+    .responsive-table-wrapper {
+        margin: 0 -20px;
+        padding: 0 20px;
+    }
+}
+
+/* Mobile card alternative for tables */
+.mobile-card-list {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .desktop-table {
+        display: none;
+    }
+
+    .mobile-card-list {
+        display: block;
+    }
+}
+
+.mobile-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.mobile-card-body {
+    display: grid;
+    gap: 8px;
+}
+
+.mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mobile-card-label {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.mobile-card-value {
+    font-size: 14px;
+    color: #111827;
+    font-weight: 600;
+}
+
+/* ===== RESPONSIVE UTILITIES ===== */
+
+/* Stack elements on mobile */
+@media (max-width: 767px) {
+    .mobile-stack {
+        flex-direction: column !important;
+    }
+
+    .mobile-full-width {
+        width: 100% !important;
+    }
+
+    .mobile-text-center {
+        text-align: center !important;
+    }
+
+    .mobile-hidden {
+        display: none !important;
+    }
+}
+
+/* ===== FORM IMPROVEMENTS ===== */
+
+@media (max-width: 767px) {
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    select,
+    textarea {
+        min-height: 48px;
+        padding: 12px 16px;
+    }
+
+    button,
+    .btn {
+        min-height: 48px;
+        padding: 12px 24px;
+    }
+
+    /* Full width buttons on mobile */
+    .mobile-btn-full {
+        width: 100%;
+    }
+}
+
+/* ===== NAVIGATION IMPROVEMENTS ===== */
+
+@media (max-width: 767px) {
+    nav .flex.items-center.space-x-4>*:not(.mobile-menu-btn) {
+        display: none;
+    }
+
+    nav .flex.items-center.space-x-4 .mobile-menu-btn {
+        display: flex !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .mobile-menu-btn {
+        display: none !important;
+    }
+}
+
+/* ===== CARD IMPROVEMENTS ===== */
+
+@media (max-width: 767px) {
+    .card-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .story-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ===== SPACING ADJUSTMENTS ===== */
+
+@media (max-width: 767px) {
+
+    .container,
+    .max-w-7xl {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    /* Reduce padding on cards */
+    .rounded-xl {
+        padding: 16px;
+    }
+
+    /* Smaller text on mobile */
+    h1 {
+        font-size: 24px !important;
+    }
+
+    h2 {
+        font-size: 20px !important;
+    }
+
+    h3 {
+        font-size: 18px !important;
+    }
+}
+
+/* ===== CHART RESPONSIVENESS ===== */
+
+@media (max-width: 767px) {
+    canvas {
+        max-height: 300px !important;
+    }
+}
+
+/* ===== MODAL IMPROVEMENTS ===== */
+
+@media (max-width: 767px) {
+    .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 20px auto;
+    }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+/* Larger tap targets for better accessibility */
+a,
+button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Better focus states for keyboard navigation */
+*:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* ===== DARK MODE MOBILE ADJUSTMENTS ===== */
+
+@media (max-width: 767px) {
+    [data-theme="dark"] .mobile-menu {
+        background: #1f2937;
+    }
+
+    [data-theme="dark"] .mobile-menu-item:hover {
+        background: #374151;
+    }
+
+    [data-theme="dark"] .mobile-card {
+        background: #1f2937;
+    }
+}
+
+/* ===== LANDSCAPE ORIENTATION ===== */
+
+@media (max-width: 767px) and (orientation: landscape) {
+    .mobile-menu {
+        width: 320px;
+        right: -320px;
+    }
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+
+    .mobile-menu,
+    .mobile-menu-overlay,
+    .mobile-menu-btn,
+    nav button {
+        display: none !important;
+    }
+}
