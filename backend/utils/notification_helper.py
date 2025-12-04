@@ -63,7 +63,7 @@ def notify_parent_of_evaluation(
         return
     
     # Get parent
-    parent = db.query(User).filter(User.id == student.veli_id).first()
+    parent = db.query(User).filter(User.id == student.parent_id).first()
     if not parent:
         return
     
@@ -149,8 +149,8 @@ def notify_progress_milestone(
     )
     
     # Notify parent if exists
-    if student.veli_id:
-        parent = db.query(User).filter(User.id == student.veli_id).first()
+    if student.parent_id:
+        parent = db.query(User).filter(User.id == student.parent_id).first()
         if parent:
             create_notification(
                 db=db,

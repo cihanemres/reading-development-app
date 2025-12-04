@@ -200,8 +200,8 @@
                 // Update summary cards
                 document.getElementById('totalUsers').textContent = stats.users.total;
                 document.getElementById('totalStories').textContent = stats.stories.total;
-                document.getElementById('totalReadings').textContent = stats.activities.pre_readings;
-                document.getElementById('totalEvaluations').textContent = stats.activities.teacher_evaluations;
+                document.getElementById('totalReadings').textContent = stats.activity.total_readings;
+                document.getElementById('totalEvaluations').textContent = stats.activity.teacher_evaluations;
 
                 // Update detailed stats
                 document.getElementById('studentCount').textContent = stats.users.students;
@@ -243,10 +243,10 @@
                 'activityStatsChart',
                 ['Ön Okuma', 'Pratik', 'Quiz', 'Değerlendirme'],
                 [
-                    stats.activities.pre_readings,
-                    stats.activities.practices,
-                    stats.activities.quiz_submissions,
-                    stats.activities.teacher_evaluations
+                    stats.activity.total_readings,
+                    stats.activity.total_practices,
+                    stats.activity.quiz_submissions,
+                    stats.activity.teacher_evaluations
                 ],
                 'Aktivite Sayısı'
             );

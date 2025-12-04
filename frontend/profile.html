@@ -42,6 +42,7 @@
 
     <div class="max-w-3xl mx-auto px-4 py-8">
         <div class="bg-white rounded-xl shadow-md p-8">
+            <!-- Profile Header -->
             <div class="flex items-center space-x-4 mb-8">
                 <div class="bg-purple-100 w-20 h-20 rounded-full flex items-center justify-center">
                     <i class="fas fa-user text-purple-600 text-3xl"></i>
@@ -52,44 +53,69 @@
                 </div>
             </div>
 
+            <!-- Profile Form -->
             <form id="profileForm" class="space-y-6">
                 <div>
                     <label class="block font-semibold mb-2">Ad Soyad</label>
-                    <input type="text" id="formName" required class="w-full border-2 rounded-lg p-3">
+                    <input type="text" id="formName" required
+                        class="w-full border-2 rounded-lg p-3 focus:border-purple-600 focus:outline-none">
                 </div>
 
                 <div>
                     <label class="block font-semibold mb-2">E-posta</label>
-                    <input type="email" id="formEmail" required class="w-full border-2 rounded-lg p-3">
-                </div>
-
-                <div>
-                    <label class="block font-semibold mb-2">Yeni Şifre (Değiştirmek istemiyorsanız boş bırakın)</label>
-                    <input type="password" id="formPassword" placeholder="Minimum 6 karakter"
-                        class="w-full border-2 rounded-lg p-3">
-                </div>
-
-                <div>
-                    <label class="block font-semibold mb-2">Yeni Şifre Tekrar</label>
-                    <input type="password" id="formPasswordConfirm" placeholder="Şifreyi tekrar girin"
-                        class="w-full border-2 rounded-lg p-3">
+                    <input type="email" id="formEmail" required
+                        class="w-full border-2 rounded-lg p-3 focus:border-purple-600 focus:outline-none">
                 </div>
 
                 <div class="flex space-x-4">
                     <button type="button" onclick="history.back()"
-                        class="flex-1 bg-gray-300 py-3 rounded-lg font-semibold">
+                        class="flex-1 bg-gray-300 py-3 rounded-lg font-semibold hover:bg-gray-400 transition">
                         İptal
                     </button>
-                    <button type="submit" class="flex-1 gradient-bg text-white py-3 rounded-lg font-semibold">
+                    <button type="submit"
+                        class="flex-1 gradient-bg text-white py-3 rounded-lg font-semibold hover:opacity-90 transition">
                         <i class="fas fa-save mr-2"></i>Kaydet
                     </button>
                 </div>
             </form>
+
+            <!-- Security Section -->
+            <div class="mt-8 pt-6 border-t">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-shield-alt text-purple-600 mr-2"></i>Güvenlik
+                </h2>
+                <div class="space-y-4">
+                    <button onclick="showChangePasswordModal()"
+                        class="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-key text-yellow-500 mr-3"></i>
+                            <div class="text-left">
+                                <p class="font-medium">Şifre Değiştir</p>
+                                <p class="text-sm text-gray-500">Güvenliğiniz için şifrenizi düzenli aralıklarla
+                                    değiştirin</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </button>
+
+                    <div class="p-4 bg-blue-50 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-medium text-blue-800">Oturum Güvenliği</p>
+                                <p class="text-sm text-blue-600">30 dakika aktivite olmazsa oturumunuz otomatik
+                                    sonlandırılır.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/session.js"></script>
     <script>
         if (!checkAuth()) window.location.href = 'login.html';
 
@@ -112,31 +138,14 @@
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const password = document.getElementById('formPassword').value;
-            const passwordConfirm = document.getElementById('formPasswordConfirm').value;
-
-            if (password && password !== passwordConfirm) {
-                alert('Şifreler eşleşmiyor!');
-                return;
-            }
-
-            if (password && password.length < 6) {
-                alert('Şifre en az 6 karakter olmalıdır!');
-                return;
-            }
-
             const data = {
                 ad_soyad: document.getElementById('formName').value,
                 email: document.getElementById('formEmail').value
             };
 
-            if (password) {
-                data.password = password;
-            }
-
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:8000/api/auth/profile', {
+                const response = await fetch(`${API_BASE_URL}/auth/profile`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -154,17 +163,31 @@
                     currentUser.email = updatedUser.email;
                     localStorage.setItem('user', JSON.stringify(currentUser));
 
-                    alert('Profil güncellendi!');
-                    location.reload();
+                    showToast('✅ Profil güncellendi!', 'success');
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     const error = await response.json();
-                    alert('Hata: ' + (error.detail || 'Bilinmeyen hata'));
+                    showToast('❌ ' + (error.detail || 'Bilinmeyen hata'), 'error');
                 }
             } catch (error) {
                 console.error(error);
-                alert('Bağlantı hatası!');
+                showToast('❌ Bağlantı hatası!', 'error');
             }
         });
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function performLogout() {
+            SessionManager.stop();
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
     </script>
 </body>
 

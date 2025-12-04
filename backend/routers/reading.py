@@ -103,6 +103,15 @@ async def save_pre_reading(
     db.commit()
     db.refresh(pre_reading)
     
+    # Check milestone
+    try:
+        from utils.notification_helper import notify_progress_milestone
+        total = db.query(PreReading).filter(PreReading.ogrenci_id == current_user.id).count()
+        if total in [5, 10, 20, 50, 100]:
+            notify_progress_milestone(db, current_user.id, 'stories', total)
+    except Exception as e:
+        print(f'Milestone notification error: {e}')
+    
     return pre_reading
 
 @router.post("/practice", response_model=PracticeResponse, status_code=status.HTTP_201_CREATED)

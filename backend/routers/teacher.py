@@ -362,3 +362,43 @@ async def get_class_analytics(
         },
         "student_stats": student_stats
     }
+from utils.notification_helper import notify_parent_of_evaluation
+
+@router.post('/evaluation', response_model=EvaluationResponse)
+async def create_evaluation(
+    evaluation: EvaluationCreate,
+    current_user: User = Depends(require_role(UserRole.TEACHER)),
+    db: Session = Depends(get_db)
+):
+    '''Create teacher evaluation with parent notification'''
+    # Verify student and story
+    student = db.query(User).filter(User.id == evaluation.ogrenci_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail='Student not found')
+    
+    story = db.query(Story).filter(Story.id == evaluation.story_id).first()
+    if not story:
+        raise HTTPException(status_code=404, detail='Story not found')
+    
+    # Create evaluation
+    new_eval = TeacherEvaluation(
+        ogrenci_id=evaluation.ogrenci_id,
+        story_id=evaluation.story_id,
+        ogretmen_id=current_user.id,
+        hatali_kelime=evaluation.hatali_kelime,
+        akicilik_puan=evaluation.akicilik_puan,
+        acik_soru_puani=evaluation.acik_soru_puani,
+        ogretmen_yorumu=evaluation.ogretmen_yorumu
+    )
+    
+    db.add(new_eval)
+    db.commit()
+    db.refresh(new_eval)
+    
+    # Send notification to parent
+    try:
+        notify_parent_of_evaluation(db, student.id, current_user.ad_soyad, story.baslik)
+    except Exception as e:
+        print(f'Notification error: {e}')
+    
+    return new_eval

@@ -219,6 +219,11 @@ async def get_statistics(
     total_answers = db.query(Answer).count()
     total_evaluations = db.query(TeacherEvaluation).count()
     
+    # Calculate average quiz score
+    from sqlalchemy import func as sql_func
+    avg_quiz = db.query(sql_func.avg(Answer.dogru_sayisi)).scalar()
+    avg_quiz_score = float(avg_quiz) if avg_quiz else 0.0
+    
     return {
         "users": {
             "students": total_students,
@@ -233,10 +238,11 @@ async def get_statistics(
             "grade_4": stories_grade_4,
             "total": stories_grade_2 + stories_grade_3 + stories_grade_4
         },
-        "activities": {
-            "pre_readings": total_pre_readings,
+        "activity": {
+            "total_readings": total_pre_readings,
             "practices": total_practices,
             "quiz_submissions": total_answers,
+            "avg_quiz_score": avg_quiz_score,
             "teacher_evaluations": total_evaluations
         }
     }

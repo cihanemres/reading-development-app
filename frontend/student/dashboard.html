@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="../css/animations.css">
     <link rel="stylesheet" href="../css/mobile.css">
     <link rel="stylesheet" href="../css/notifications.css">
+    <link rel="stylesheet" href="../css/gamification.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
@@ -37,6 +38,7 @@
                         <p class="text-sm font-semibold text-gray-800" id="userName">Yükleniyor...</p>
                         <p class="text-xs text-gray-500" id="userGrade"></p>
                     </div>
+                    <div id="notificationBell"></div>
                     <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 transition" title="Tema">
                         <i class="fas fa-moon text-gray-600"></i>
                     </button>
@@ -56,7 +58,9 @@
             <h1 class="text-2xl md:text-3xl font-bold mb-2">Hoş Geldin! 👋</h1>
             <p class="text-purple-100 text-sm md:text-base">Okuma becerilerini geliştirmek için hazır mısın?</p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
             <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
                 <div class="flex items-center justify-between">
                     <div>
@@ -85,7 +89,64 @@
                     <i class="fas fa-tachometer-alt text-3xl md:text-4xl text-green-200"></i>
                 </div>
             </div>
+            <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-xs md:text-sm">Kazanılan Rozetler</p>
+                        <p class="text-2xl md:text-3xl font-bold text-orange-600" id="totalBadges">0</p>
+                    </div>
+                    <i class="fas fa-medal text-3xl md:text-4xl text-orange-200"></i>
+                </div>
+            </div>
         </div>
+
+        <!-- Progress & Badges Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 md:mb-8">
+            <!-- Progress Tracker -->
+            <div id="progressContainer">
+                <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
+                    <h3 class="text-xl font-bold mb-2">🎯 Bir Sonraki Hedef</h3>
+                    <p class="text-sm mb-4">Yükleniyor...</p>
+                </div>
+            </div>
+
+            <!-- My Badges -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-medal mr-2 text-orange-500"></i>Rozetlerim
+                    </h3>
+                    <button onclick="showAllBadges()" class="text-purple-600 hover:text-purple-700 text-sm">
+                        Tümünü Gör
+                    </button>
+                </div>
+                <div id="badgesContainer" class="grid grid-cols-4 gap-3">
+                    <p class="col-span-4 text-center text-gray-500 py-4">Yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Section -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 md:mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-trophy mr-2 text-yellow-500"></i>Liderlik Tablosu
+                </h3>
+                <div class="flex space-x-2">
+                    <button onclick="loadLeaderboard('weekly')" id="lbWeekly"
+                        class="px-3 py-1 rounded-lg text-sm bg-purple-600 text-white">Haftalık</button>
+                    <button onclick="loadLeaderboard('monthly')" id="lbMonthly"
+                        class="px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700">Aylık</button>
+                    <button onclick="loadLeaderboard('all_time')" id="lbAllTime"
+                        class="px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700">Tüm Zamanlar</button>
+                </div>
+            </div>
+            <div id="leaderboardContainer">
+                <p class="text-center text-gray-500 py-8">Yükleniyor...</p>
+            </div>
+        </div>
+
+        <!-- Stories Section -->
         <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4">
                 <h2 class="text-xl md:text-2xl font-bold text-gray-800">Hikâyeler</h2>
@@ -107,12 +168,28 @@
             </div>
         </div>
     </div>
+
+    <!-- All Badges Modal -->
+    <div id="badgesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="gradient-bg text-white p-6 rounded-t-xl flex items-center justify-between">
+                <h2 class="text-2xl font-bold">🏅 Tüm Rozetler</h2>
+                <button onclick="closeBadgesModal()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div id="allBadgesContainer" class="p-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+            </div>
+        </div>
+    </div>
+
     <script src="../js/theme.js"></script>
     <script src="../js/loading.js"></script>
     <script src="../js/notifications.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/search.js"></script>
+    <script src="../js/gamification.js"></script>
     <script>
         function logout() {
             localStorage.removeItem('token');
@@ -132,6 +209,11 @@
 
         document.getElementById('userName').textContent = user.ad_soyad;
         document.getElementById('userGrade').textContent = `${user.sinif_duzeyi}. Sınıf`;
+
+        // Initialize notification bell
+        if (typeof NotificationUI !== 'undefined') {
+            NotificationUI.init('notificationBell');
+        }
 
         async function loadProgressSummary() {
             try {
@@ -201,8 +283,112 @@
             return card;
         }
 
+        // Gamification Functions
+        async function loadGamification() {
+            try {
+                // Load badges
+                const badgesResponse = await fetch(`${API_BASE_URL}/gamification/badges/me`, {
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+                });
+                if (badgesResponse.ok) {
+                    const badgesData = await badgesResponse.json();
+                    document.getElementById('totalBadges').textContent = badgesData.total || 0;
+                    renderSmallBadges(badgesData.badges);
+                }
+
+                // Load progress
+                const progressResponse = await fetch(`${API_BASE_URL}/gamification/progress/me`, {
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+                });
+                if (progressResponse.ok) {
+                    const progressData = await progressResponse.json();
+                    Gamification.renderProgress(progressData, document.getElementById('progressContainer'));
+                }
+
+                // Check for new achievements
+                Gamification.checkAchievements();
+            } catch (error) {
+                console.error('Error loading gamification:', error);
+            }
+        }
+
+        function renderSmallBadges(badges) {
+            const container = document.getElementById('badgesContainer');
+            if (badges.length === 0) {
+                container.innerHTML = '<p class="col-span-4 text-center text-gray-500 py-4">Henüz rozet kazanmadın. Hikaye okumaya başla!</p>';
+                return;
+            }
+
+            const displayBadges = badges.slice(0, 4);
+            container.innerHTML = displayBadges.map(badge => `
+                <div class="text-center">
+                    <div class="text-3xl mb-1">${badge.icon}</div>
+                    <p class="text-xs text-gray-600 truncate">${badge.name}</p>
+                </div>
+            `).join('');
+        }
+
+        let currentPeriod = 'weekly';
+        async function loadLeaderboard(period = 'weekly') {
+            currentPeriod = period;
+
+            // Update button styles
+            document.querySelectorAll('[id^="lb"]').forEach(btn => {
+                btn.className = 'px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700';
+            });
+            document.getElementById('lb' + period.charAt(0).toUpperCase() + period.slice(1).replace('_t', 'T')).className =
+                'px-3 py-1 rounded-lg text-sm bg-purple-600 text-white';
+
+            const container = document.getElementById('leaderboardContainer');
+            container.innerHTML = '<p class="text-center text-gray-500 py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Yükleniyor...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/gamification/leaderboard?period=${period}&grade_level=${user.sinif_duzeyi}`, {
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+                });
+
+                if (!response.ok) throw new Error('Failed');
+
+                const data = await response.json();
+                Gamification.renderLeaderboard(data.leaderboard, container);
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+                container.innerHTML = '<p class="text-center text-red-500 py-4">Liderlik tablosu yüklenemedi</p>';
+            }
+        }
+
+        function showAllBadges() {
+            loadAllBadges();
+            document.getElementById('badgesModal').classList.remove('hidden');
+            document.getElementById('badgesModal').classList.add('flex');
+        }
+
+        function closeBadgesModal() {
+            document.getElementById('badgesModal').classList.add('hidden');
+            document.getElementById('badgesModal').classList.remove('flex');
+        }
+
+        async function loadAllBadges() {
+            const container = document.getElementById('allBadgesContainer');
+            try {
+                const response = await fetch(`${API_BASE_URL}/gamification/badges/me`, {
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    Gamification.renderBadges(data.badges, container);
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="text-red-500">Rozetler yüklenemedi</p>';
+            }
+        }
+
+        // Initialize
         loadProgressSummary();
         loadStories();
+        loadGamification();
+        loadLeaderboard('weekly');
+
         SearchUtils.setupSearch('storySearch', (value) => {
             loadStories(value);
         });

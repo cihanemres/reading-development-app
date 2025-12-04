@@ -1,15 +1,35 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from typing import Optional
+import re
 from database import get_db
 from models.user import User, UserRole
 from auth.password import hash_password, verify_password
 from auth.jwt_handler import create_access_token
+from auth.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-# Pydantic schemas
+# ==================== PASSWORD VALIDATION ====================
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """
+    Validate password strength:
+    - Minimum 6 characters
+    - At least one uppercase letter
+    - At least one number
+    """
+    if len(password) < 6:
+        return False, "Şifre en az 6 karakter olmalıdır"
+    if not re.search(r'[A-Z]', password):
+        return False, "Şifre en az bir büyük harf içermelidir"
+    if not re.search(r'[0-9]', password):
+        return False, "Şifre en az bir rakam içermelidir"
+    return True, ""
+
+# ==================== PYDANTIC SCHEMAS ====================
+
 class RegisterRequest(BaseModel):
     ad_soyad: str
     email: EmailStr
@@ -17,6 +37,13 @@ class RegisterRequest(BaseModel):
     rol: UserRole
     sinif_duzeyi: Optional[int] = None
     parent_id: Optional[int] = None
+    
+    @validator('password')
+    def password_strength(cls, v):
+        is_valid, message = validate_password_strength(v)
+        if not is_valid:
+            raise ValueError(message)
+        return v
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -37,10 +64,34 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class UpdateProfileRequest(BaseModel):
+    ad_soyad: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+    
+    @validator('new_password')
+    def password_strength(cls, v):
+        is_valid, message = validate_password_strength(v)
+        if not is_valid:
+            raise ValueError(message)
+        return v
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class MessageResponse(BaseModel):
+    success: bool
+    message: str
+
+# ==================== AUTHENTICATION ENDPOINTS ====================
+
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(request: RegisterRequest, db: Session = Depends(get_db)):
     """
-    Register a new user
+    Register a new user with password strength validation
     """
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == request.email).first()
@@ -138,26 +189,21 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(
-    current_user: User = Depends(lambda: __import__('backend.auth.dependencies', fromlist=['get_current_user']).get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Get current user information
     """
     return current_user
 
-class UpdateProfileRequest(BaseModel):
-    ad_soyad: Optional[str] = None
-    email: Optional[EmailStr] = None
-    password: Optional[str] = None
-
 @router.put("/profile", response_model=UserResponse)
 async def update_profile(
     request: UpdateProfileRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(lambda: __import__('backend.auth.dependencies', fromlist=['get_current_user']).get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Update current user's profile
+    Update current user's profile (name and email only)
     """
     # Update name if provided
     if request.ad_soyad:
@@ -173,11 +219,46 @@ async def update_profile(
             )
         current_user.email = request.email
     
-    # Update password if provided
-    if request.password:
-        current_user.password_hash = hash_password(request.password)
-    
     db.commit()
     db.refresh(current_user)
     
     return current_user
+
+# ==================== PASSWORD MANAGEMENT ====================
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password(
+    request: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Change current user's password with verification
+    """
+    # Verify current password
+    if not verify_password(request.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Mevcut şifre yanlış"
+        )
+    
+    # Check if new password is same as current
+    if request.current_password == request.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Yeni şifre mevcut şifreden farklı olmalıdır"
+        )
+    
+    # Update password
+    current_user.password_hash = hash_password(request.new_password)
+    db.commit()
+    
+    return {"success": True, "message": "Şifre başarıyla değiştirildi"}
+
+@router.post("/verify-token", response_model=MessageResponse)
+async def verify_token(current_user: User = Depends(get_current_user)):
+    """
+    Verify if current token is still valid (for session management)
+    """
+    return {"success": True, "message": "Token is valid"}
+

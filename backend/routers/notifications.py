@@ -146,3 +146,91 @@ async def delete_notification(
     db.commit()
     
     return {"success": True, "message": "Notification deleted"}
+
+
+# ==================== ANNOUNCEMENT ENDPOINT ====================
+
+from models.user import UserRole
+
+class AnnouncementCreate(BaseModel):
+    title: str
+    message: str
+    target: str  # 'all', 'students', 'teachers', 'parents', 'grade_2', 'grade_3', 'grade_4'
+
+class AnnouncementResponse(BaseModel):
+    success: bool
+    message: str
+    sent_count: int
+
+@router.post("/announcement", response_model=AnnouncementResponse)
+async def send_announcement(
+    announcement: AnnouncementCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Send announcement to multiple users
+    Only admin and teachers can send announcements
+    """
+    # Check permission
+    if current_user.rol not in [UserRole.ADMIN, UserRole.TEACHER]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins and teachers can send announcements"
+        )
+    
+    # Determine target users
+    target = announcement.target.lower()
+    query = db.query(User)
+    
+    if target == 'all':
+        # All users except the sender
+        query = query.filter(User.id != current_user.id)
+    elif target == 'students':
+        query = query.filter(User.rol == UserRole.STUDENT)
+    elif target == 'teachers':
+        query = query.filter(User.rol == UserRole.TEACHER)
+    elif target == 'parents':
+        query = query.filter(User.rol == UserRole.PARENT)
+    elif target.startswith('grade_'):
+        grade = int(target.split('_')[1])
+        query = query.filter(
+            User.rol == UserRole.STUDENT,
+            User.sinif_duzeyi == grade
+        )
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid target. Use: all, students, teachers, parents, grade_2, grade_3, grade_4"
+        )
+    
+    target_users = query.all()
+    
+    if not target_users:
+        return {
+            "success": True,
+            "message": "No users found for the selected target",
+            "sent_count": 0
+        }
+    
+    # Create notifications for all target users
+    notifications = []
+    for user in target_users:
+        notification = Notification(
+            user_id=user.id,
+            type="announcement",
+            title=f"📢 {announcement.title}",
+            message=f"{announcement.message}\n\n— {current_user.ad_soyad}",
+            link=None
+        )
+        notifications.append(notification)
+    
+    db.add_all(notifications)
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": f"Announcement sent to {len(notifications)} users",
+        "sent_count": len(notifications)
+    }
+

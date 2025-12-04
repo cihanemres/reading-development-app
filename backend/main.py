@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 
 from database import init_db
-from routers import auth, stories, reading, teacher, parent, admin, notifications
+from routers import auth, stories, reading, teacher, parent, admin, notifications, export, gamification
 
 # Load environment variables
 load_dotenv()
@@ -42,7 +42,8 @@ app.include_router(teacher.router)
 app.include_router(parent.router)
 app.include_router(admin.router)
 app.include_router(notifications.router)
-# app.include_router(gamification.router)  # Temporarily disabled
+app.include_router(export.router)
+app.include_router(gamification.router)
 
 @app.on_event("startup")
 async def startup_event():

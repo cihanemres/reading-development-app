@@ -14,7 +14,7 @@ from models.achievement import Achievement
 from models.reading_activity import PreReading, Practice
 from auth.dependencies import get_current_user
 
-router = APIRouter(prefix="/gamification", tags=["gamification"])
+router = APIRouter(prefix="/api/gamification", tags=["gamification"])
 
 # Badge definitions
 BADGE_CRITERIA = {
