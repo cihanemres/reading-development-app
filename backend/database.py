@@ -7,7 +7,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/okuma_db")
+# Get DATABASE_URL from environment
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/okuma_db")
+
+# Debug: Print the database URL (will show in logs)
+print(f"DATABASE_URL configured: {DATABASE_URL[:50]}..." if DATABASE_URL else "DATABASE_URL not set!")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
