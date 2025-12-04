@@ -181,7 +181,7 @@
 
                 // Load audio if available
                 if (story.ses_dosyasi) {
-                    document.getElementById('audioSource').src = `http://localhost:8000${story.ses_dosyasi}`;
+                    document.getElementById('audioSource').src = `https://reading-development-app-production.up.railway.app${story.ses_dosyasi}`;
                     audio.load();
                 } else {
                     alert('Bu hikâye için ses dosyası bulunmuyor!');

@@ -123,7 +123,7 @@ const NotificationManager = {
      */
     async fetchNotifications() {
         try {
-            const response = await fetch('http://localhost:8000/api/notifications?limit=10', {
+            const response = await fetch('https://reading-development-app-production.up.railway.app/api/notifications?limit=10', {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
@@ -244,7 +244,7 @@ const NotificationManager = {
      */
     async markAsRead(notificationId) {
         try {
-            await fetch(`http://localhost:8000/api/notifications/${notificationId}/mark-read`, {
+            await fetch(`https://reading-development-app-production.up.railway.app/api/notifications/${notificationId}/mark-read`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -262,7 +262,7 @@ const NotificationManager = {
      */
     async markAllAsRead() {
         try {
-            await fetch('http://localhost:8000/api/notifications/mark-all-read', {
+            await fetch('https://reading-development-app-production.up.railway.app/api/notifications/mark-all-read', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -302,7 +302,7 @@ const NotificationManager = {
         // Fetch unread count periodically
         this.pollingInterval = setInterval(async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/notifications/unread-count', {
+                const response = await fetch('https://reading-development-app-production.up.railway.app/api/notifications/unread-count', {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }

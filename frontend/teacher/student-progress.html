@@ -183,7 +183,7 @@
         async function loadStudentData() {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`http://localhost:8000/api/teacher/student/${studentId}/progress`, {
+                const response = await fetch(`https://reading-development-app-production.up.railway.app/api/teacher/student/${studentId}/progress`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -282,7 +282,7 @@
 
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`http://localhost:8000/api/teacher/student/${studentId}/story/${storyId}/answers`, {
+                const response = await fetch(`https://reading-development-app-production.up.railway.app/api/teacher/student/${studentId}/story/${storyId}/answers`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -330,7 +330,7 @@
 
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:8000/api/teacher/evaluate', {
+                const response = await fetch('https://reading-development-app-production.up.railway.app/api/teacher/evaluate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
