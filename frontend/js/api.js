@@ -1,5 +1,5 @@
-// API Base URL
-const API_BASE_URL = 'http://localhost:8000/api';
+// API Base URL - Production (Railway)
+const API_BASE_URL = 'https://reading-development-app-production.up.railway.app/api';
 
 // Get auth token from localStorage
 function getAuthToken() {
