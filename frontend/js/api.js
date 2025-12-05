@@ -1,5 +1,5 @@
-// API Base URL - Production (Railway) - Updated: 2024-12-05
-const API_BASE_URL = 'https://reading-development-app-production.up.railway.app/api';
+// API Base URL - Production (Railway) - Force HTTPS
+const API_BASE_URL = 'https://reading-development-app-production.up.railway.app/api'.replace('http://', 'https://');
 
 // Get auth token from localStorage
 function getAuthToken() {
