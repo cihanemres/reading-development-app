@@ -157,3 +157,4 @@ if (document.readyState === 'loading') {
 }
 
 console.log('Mobile menu component loaded');
+

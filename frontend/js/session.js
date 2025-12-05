@@ -358,3 +358,4 @@ function showChangePasswordModal() {
 }
 
 console.log('Session and password utilities loaded');
+

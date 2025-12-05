@@ -177,3 +177,4 @@ window.ChartUtils = {
     formatClassComparisonData,
     destroyChart
 };
+

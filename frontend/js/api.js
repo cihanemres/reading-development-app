@@ -1,5 +1,5 @@
-// API Base URL - Production (Railway) - Force HTTPS
-const API_BASE_URL = 'https://reading-development-app-production.up.railway.app/api'.replace('http://', 'https://');
+// API Base URL - Production (Render)
+const API_BASE_URL = 'https://okuma-backend.onrender.com/api';
 
 // Get auth token from localStorage
 function getAuthToken() {
@@ -284,3 +284,4 @@ const API = {
         return response.json();
     }
 };
+

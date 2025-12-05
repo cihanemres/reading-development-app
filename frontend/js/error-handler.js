@@ -291,3 +291,4 @@ if (document.readyState === 'loading') {
     ErrorHandler.initNetworkMonitor();
     console.log('ErrorHandler initialized');
 }
+

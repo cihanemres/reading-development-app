@@ -314,3 +314,4 @@ const Gamification = {
 
 // Auto-initialize
 console.log('Gamification system loaded');
+
