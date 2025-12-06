@@ -88,6 +88,17 @@
                 <p class="text-gray-600 mt-4">Veriler yükleniyor...</p>
             </div>
         </div>
+
+        <!-- Speech Practice History -->
+        <h2 class="text-xl font-bold text-gray-800 mb-4 mt-8">
+            <i class="fas fa-microphone text-purple-600 mr-2"></i>Sesli Okuma Geçmişi
+        </h2>
+        <div id="speechPracticeContainer" class="space-y-4">
+            <div class="text-center py-12">
+                <i class="fas fa-spinner fa-spin text-4xl text-purple-600"></i>
+                <p class="text-gray-600 mt-4">Sesli okuma verileri yükleniyor...</p>
+            </div>
+        </div>
     </div>
 
     <!-- Evaluation Modal -->
@@ -358,9 +369,96 @@
             if (openEvalStoryId) {
                 openEvalModal(openEvalStoryId);
             }
+            // Load speech practice after student data
+            loadSpeechPractice();
         });
+
+        // Load speech practice history
+        async function loadSpeechPractice() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`https://okuma-backend.onrender.com/api/teacher/student/${studentId}/speech-practice`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load speech practice');
+
+                const data = await response.json();
+                displaySpeechPractice(data);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('speechPracticeContainer').innerHTML = `
+                    <div class="text-center py-12 bg-white rounded-xl shadow-sm">
+                        <i class="fas fa-microphone-slash text-4xl text-gray-300"></i>
+                        <p class="text-gray-500 mt-4">Sesli okuma verisi bulunamadı.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displaySpeechPractice(data) {
+            const container = document.getElementById('speechPracticeContainer');
+
+            if (!data.stories || data.stories.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 bg-white rounded-xl shadow-sm">
+                        <i class="fas fa-microphone-slash text-4xl text-gray-300"></i>
+                        <p class="text-gray-500 mt-4">Henüz sesli okuma aktivitesi yok.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = data.stories.map(story => `
+                <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        <i class="fas fa-book-open text-purple-600 mr-2"></i>${story.story_title}
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        ${story.attempts.map(attempt => {
+                const accuracyColor = attempt.dogruluk_orani >= 80 ? 'bg-green-50 border-green-200 text-green-800' :
+                    attempt.dogruluk_orani >= 60 ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
+                        'bg-red-50 border-red-200 text-red-800';
+
+                const date = new Date(attempt.created_at).toLocaleDateString('tr-TR', {
+                    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+                });
+
+                return `
+                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-3 rounded-lg border ${accuracyColor}">
+                                    <div class="flex items-center space-x-4">
+                                        <span class="font-bold">Deneme #${attempt.deneme_no}</span>
+                                        <span class="text-sm opacity-75">${date}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-6 mt-2 md:mt-0">
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-xs opacity-75">Doğruluk</span>
+                                            <span class="font-bold text-lg">%${attempt.dogruluk_orani}</span>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-xs opacity-75">Doğru</span>
+                                            <span class="font-bold">${attempt.dogru_kelime}</span>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-xs opacity-75">Hatalı</span>
+                                            <span class="font-bold">${attempt.hatali_kelime}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                ${attempt.hatali_kelimeler && attempt.hatali_kelimeler.length > 0 ? `
+                                    <div class="ml-4 mt-1 text-sm text-gray-600">
+                                        <span class="font-semibold text-red-500">Hatalı Kelimeler:</span> 
+                                        ${attempt.hatali_kelimeler.join(', ')}
+                                    </div>
+                                ` : ''}
+                            `;
+            }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
     </script>
 </body>
 
 </html>
-

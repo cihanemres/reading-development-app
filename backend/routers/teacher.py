@@ -7,6 +7,8 @@ from models.user import User, UserRole
 from models.reading_activity import Answer, PreReading, Practice
 from models.evaluation import TeacherEvaluation
 from models.story import Story
+from models.speech_practice import SpeechPracticeRecord
+import json
 from auth.dependencies import get_current_user, require_role
 from utils.progress_calculator import calculate_improvement, get_student_progress_summary
 from sqlalchemy import func
@@ -402,3 +404,62 @@ async def create_evaluation(
         print(f'Notification error: {e}')
     
     return new_eval
+
+@router.get("/student/{student_id}/speech-practice")
+async def get_student_speech_practice(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.TEACHER))
+):
+    """
+    Get speech practice history for a specific student
+    """
+    # Verify student exists
+    student = db.query(User).filter(
+        User.id == student_id,
+        User.rol == UserRole.STUDENT
+    ).first()
+    
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student not found"
+        )
+    
+    # Get all speech practice records for this student
+    records = db.query(SpeechPracticeRecord).filter(
+        SpeechPracticeRecord.ogrenci_id == student_id
+    ).order_by(
+        SpeechPracticeRecord.hikaye_id,
+        SpeechPracticeRecord.deneme_no.desc()
+    ).all()
+    
+    # Group by story
+    stories_data = {}
+    for record in records:
+        story_id = record.hikaye_id
+        if story_id not in stories_data:
+            story = db.query(Story).filter(Story.id == story_id).first()
+            stories_data[story_id] = {
+                "story_id": story_id,
+                "story_title": story.baslik if story else "Bilinmeyen Hikaye",
+                "attempts": []
+            }
+        
+        stories_data[story_id]["attempts"].append({
+            "deneme_no": record.deneme_no,
+            "dogru_kelime": record.dogru_kelime,
+            "hatali_kelime": record.hatali_kelime,
+            "atlanan_kelime": record.atlanan_kelime,
+            "toplam_kelime": record.toplam_kelime,
+            "dogruluk_orani": record.dogruluk_orani,
+            "hatali_kelimeler": json.loads(record.hatali_kelimeler) if record.hatali_kelimeler else [],
+            "created_at": str(record.created_at) if record.created_at else None
+        })
+    
+    return {
+        "student_id": student_id,
+        "student_name": student.ad_soyad,
+        "stories": list(stories_data.values())
+    }
+
