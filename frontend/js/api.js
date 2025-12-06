@@ -380,6 +380,27 @@ const API = {
     async getMyAssignments() {
         const response = await apiRequest('/assignments/student/me');
         return response.json();
+    },
+
+    // Parent
+    async getChildren() {
+        const response = await apiRequest('/parent/children');
+        return response.json();
+    },
+
+    async getChildProgress(childId) {
+        const response = await apiRequest(`/parent/child/${childId}/progress`);
+        return response.json();
+    },
+
+    async getTeacherComments(childId) {
+        const response = await apiRequest(`/parent/child/${childId}/teacher-comments`);
+        return response.json();
+    },
+
+    async getRecommendations(childId) {
+        const response = await apiRequest(`/parent/child/${childId}/recommendations`);
+        return response.json();
     }
 };
 
