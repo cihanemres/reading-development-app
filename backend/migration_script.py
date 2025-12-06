@@ -62,7 +62,7 @@ def run_migration():
          )"""),
         
         ("Set existing users as approved",
-         "UPDATE users SET is_approved = TRUE WHERE is_approved IS NULL"),
+         "UPDATE users SET is_approved = TRUE WHERE is_approved = FALSE OR is_approved IS NULL"),
     ]
     
     success_count = 0
