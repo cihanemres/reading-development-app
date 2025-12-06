@@ -94,14 +94,13 @@ const API = {
 
     // Stories
     async getStories(gradeLevel = null, search = null, subject = null) {
-        let url = '/stories?';
         const params = new URLSearchParams();
 
         if (gradeLevel) params.append('sinif_duzeyi', gradeLevel);
         if (search) params.append('search', search);
         if (subject) params.append('ders', subject);
 
-        if (params.toString()) url += `?${params.toString()}`;
+        const url = params.toString() ? `/stories?${params.toString()}` : '/stories';
 
         const response = await apiRequest(url);
         return response.json();
