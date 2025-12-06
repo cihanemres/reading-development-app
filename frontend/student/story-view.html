@@ -7,6 +7,7 @@
     <title>Hikâye Okuma - Okuma Geliştirme</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/speech-practice.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
@@ -133,6 +134,47 @@
             </div>
         </div>
 
+        <!-- Speech Practice Section -->
+        <div id="speechPracticeSection" class="speech-practice-container">
+            <h3 class="speech-practice-title">
+                <i class="fas fa-microphone"></i>
+                Sesli Okuma Pratiği
+            </h3>
+            
+            <div id="browserWarning" class="browser-warning hidden">
+                <i class="fas fa-exclamation-triangle"></i>
+                Tarayıcınız sesli okuma özelliğini desteklemiyor. Lütfen Chrome veya Edge kullanın.
+            </div>
+            
+            <button id="recordBtn" class="record-btn record-btn-start">
+                <i class="fas fa-microphone"></i>
+                <span>Sesli Okumaya Başla</span>
+            </button>
+            
+            <div id="recordingIndicator" class="recording-indicator">
+                <div class="recording-dot"></div>
+                <span>Dinleniyor... Hikayeyi sesli okuyun</span>
+            </div>
+            
+            <div id="liveTranscript" class="live-transcript hidden">
+                <span class="live-transcript-label">Algılanan metin:</span>
+                <div id="transcriptText" class="live-transcript-text">...</div>
+            </div>
+        </div>
+        
+        <!-- Speech Results Panel -->
+        <div id="speechResultPanel" class="speech-result-panel">
+            <h3 class="result-panel-title">
+                <i class="fas fa-chart-bar"></i>
+                Okuma Sonuçları
+            </h3>
+            <div id="comparisonResults"></div>
+            <button id="tryAgainBtn" class="try-again-btn">
+                <i class="fas fa-redo"></i>
+                Tekrar Dene
+            </button>
+        </div>
+
         <!-- Results Section (Hidden initially) -->
         <div id="resultsSection" class="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl shadow-md p-8 hidden">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
@@ -176,6 +218,7 @@
 
     <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
+    <script src="../js/speech-recognition.js"></script>
     <script>
         // Check authentication
         if (!checkAuth()) {
@@ -312,6 +355,117 @@
 
         // Initialize
         loadStory();
+        
+        // Speech Recognition Setup
+        let speechRecognition = null;
+        
+        function initSpeechRecognition() {
+            // Check browser support
+            if (!SpeechRecognitionPractice.isSupported()) {
+                document.getElementById('browserWarning').classList.remove('hidden');
+                document.getElementById('recordBtn').disabled = true;
+                return;
+            }
+            
+            speechRecognition = new SpeechRecognitionPractice();
+            
+            // Handle live results
+            speechRecognition.onResult((result) => {
+                document.getElementById('transcriptText').textContent = result.combined || '...';
+            });
+            
+            // Handle errors
+            speechRecognition.onError((error) => {
+                console.error('Speech recognition error:', error);
+                if (error === 'not-allowed') {
+                    alert('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon iznini verin.');
+                }
+                stopRecording();
+            });
+            
+            // Handle end
+            speechRecognition.onEnd((finalTranscript) => {
+                showResults(finalTranscript);
+            });
+        }
+        
+        // Record button handlers
+        const recordBtn = document.getElementById('recordBtn');
+        let isRecordingActive = false;
+        
+        recordBtn.addEventListener('click', async () => {
+            if (!isRecordingActive) {
+                await startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+        
+        async function startRecording() {
+            if (!speechRecognition) {
+                initSpeechRecognition();
+            }
+            
+            try {
+                await speechRecognition.start();
+                isRecordingActive = true;
+                
+                // Update UI
+                recordBtn.classList.remove('record-btn-start');
+                recordBtn.classList.add('record-btn-stop');
+                recordBtn.innerHTML = '<i class="fas fa-stop"></i><span>Kaydı Durdur</span>';
+                
+                document.getElementById('recordingIndicator').classList.add('active');
+                document.getElementById('liveTranscript').classList.remove('hidden');
+                document.getElementById('transcriptText').textContent = 'Dinleniyor...';
+                document.getElementById('speechResultPanel').classList.remove('active');
+            } catch (error) {
+                console.error('Failed to start recording:', error);
+                alert('Kayıt başlatılamadı: ' + error.message);
+            }
+        }
+        
+        function stopRecording() {
+            if (speechRecognition) {
+                speechRecognition.stop();
+            }
+            isRecordingActive = false;
+            
+            // Update UI
+            recordBtn.classList.remove('record-btn-stop');
+            recordBtn.classList.add('record-btn-start');
+            recordBtn.innerHTML = '<i class="fas fa-microphone"></i><span>Sesli Okumaya Başla</span>';
+            
+            document.getElementById('recordingIndicator').classList.remove('active');
+        }
+        
+        function showResults(spokenText) {
+            if (!story || !spokenText) {
+                document.getElementById('liveTranscript').classList.add('hidden');
+                return;
+            }
+            
+            // Compare texts
+            const results = TextComparator.compare(story.metin, spokenText);
+            
+            // Generate and show HTML
+            const html = TextComparator.generateResultHTML(results);
+            document.getElementById('comparisonResults').innerHTML = html;
+            document.getElementById('speechResultPanel').classList.add('active');
+            
+            // Scroll to results
+            document.getElementById('speechResultPanel').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Try again button
+        document.getElementById('tryAgainBtn').addEventListener('click', () => {
+            document.getElementById('speechResultPanel').classList.remove('active');
+            document.getElementById('liveTranscript').classList.add('hidden');
+            document.getElementById('transcriptText').textContent = '...';
+        });
+        
+        // Initialize speech recognition on page load
+        initSpeechRecognition();
     </script>
 </body>
 
