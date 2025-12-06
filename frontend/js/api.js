@@ -116,6 +116,39 @@ const API = {
         return response.json();
     },
 
+    async createStory(data) {
+        const response = await apiRequest('/stories', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        return response.json();
+    },
+
+    async updateStory(storyId, data) {
+        const response = await apiRequest(`/stories/${storyId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+        return response.json();
+    },
+
+    async deleteStory(storyId) {
+        const response = await apiRequest(`/stories/${storyId}`, {
+            method: 'DELETE'
+        });
+        return response.json();
+    },
+
+    async uploadCover(storyId, file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiRequest(`/stories/${storyId}/cover`, {
+            method: 'POST',
+            body: formData
+        });
+        return response.json();
+    },
+
     // Reading Activities
     async savePreReading(data) {
         const response = await apiRequest('/reading/pre-reading', {

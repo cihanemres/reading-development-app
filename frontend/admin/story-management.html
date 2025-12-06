@@ -316,6 +316,7 @@
 
                 container.innerHTML = stories.map(story => `
                     <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition border border-gray-100 flex flex-col">
+                        <img src="${story.cover_url || '../images/default-story-cover.png'}" alt="${story.baslik}" class="w-full h-32 object-cover" onerror="this.src='../images/default-story-cover.png'">
                         <div class="h-2 bg-${getSubjectColor(story.ders)}"></div>
                         <div class="p-5 flex-1">
                             <div class="flex justify-between items-start mb-2">
