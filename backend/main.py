@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from database import init_db
 from routers import auth, stories, reading, teacher, parent, admin, notifications, export, gamification
+import migration_script
 
 # Load environment variables
 load_dotenv()
@@ -19,7 +20,7 @@ app = FastAPI(
 )
 
 # CORS Configuration
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000,https://okuma-frontend.onrender.com,https://okuma-backend.onrender.com").split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -49,6 +50,12 @@ app.include_router(gamification.router)
 async def startup_event():
     """Initialize database on startup"""
     init_db()
+    try:
+        migration_script.run_migration()
+        print("✅ Migration executed successfully")
+    except Exception as e:
+        print(f"⚠️ Migration failed: {e}")
+        
     print("✅ Database initialized successfully")
     print("🚀 Application started")
 

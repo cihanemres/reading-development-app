@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Enum as SQLEnum, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -22,6 +22,7 @@ class User(Base):
     sinif_duzeyi = Column(Integer, nullable=True)  # Only for students (1-12)
     parent_id = Column(Integer, nullable=True)  # For linking student to parent (Legacy, no FK)
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Linked teacher
+    is_approved = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

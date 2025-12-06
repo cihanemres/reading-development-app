@@ -7,210 +7,118 @@
     <title>Yönetici Paneli - Okuma Geliştirme</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/theme.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .stat-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-        }
-    </style>
-    <script src="../js/theme.js"></script>
 </head>
 
-<body class="bg-gray-50">
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <i class="fas fa-user-shield text-2xl text-purple-600 mr-3"></i>
-                    <span class="text-xl font-bold text-gray-800">Yönetici Paneli</span>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="text-right">
-                        <p class="text-sm font-semibold text-gray-800" id="userName">Yükleniyor...</p>
-                        <p class="text-xs text-gray-500">Yönetici</p>
-                    </div>
-                    <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100" title="Tema"><i
-                            class="fas fa-moon text-gray-600"></i></button>
-                    <button onclick="window.location.href='../profile.html'"
-                        class="text-purple-600 hover:text-purple-700"><i class="fas fa-user-cog text-xl"></i></button>
-                    <button onclick="performLogout()" class="text-red-600 hover:text-red-700"><i
-                            class="fas fa-sign-out-alt text-xl"></i></button>
-                </div>
+<body class="bg-gray-50 font-sans">
+    <!-- Navbar -->
+    <nav class="bg-purple-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-user-shield text-2xl"></i>
+                <h1 class="text-xl font-bold">Yönetici Paneli</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="font-medium">Admin</span>
+                <button onclick="logout()" class="hover:text-red-300 transition"><i class="fas fa-sign-out-alt"></i>
+                    Çıkış</button>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Welcome Section with Announcement Button -->
-        <div class="gradient-bg text-white rounded-xl p-8 mb-8">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h1 class="text-3xl font-bold mb-2">Hoş Geldiniz! 👋</h1>
-                    <p class="text-purple-100">Sistem yönetimi ve kontrol paneli</p>
-                </div>
-                <button onclick="showAnnouncementModal()"
-                    class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition flex items-center">
-                    <i class="fas fa-bullhorn mr-2"></i>Duyuru Gönder
-                </button>
-            </div>
-        </div>
+    <!-- Main Content -->
+    <div class="container mx-auto p-6">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Onay Bekleyen Kullanıcılar</h2>
 
-        <!-- Quick Statistics -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="stat-card bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Toplam Öğrenci</p>
-                        <p class="text-3xl font-bold text-gray-800" id="totalStudents">0</p>
-                    </div>
-                    <div class="bg-blue-100 p-4 rounded-full"><i
-                            class="fas fa-user-graduate text-2xl text-blue-600"></i></div>
-                </div>
-            </div>
-            <div class="stat-card bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Toplam Öğretmen</p>
-                        <p class="text-3xl font-bold text-gray-800" id="totalTeachers">0</p>
-                    </div>
-                    <div class="bg-green-100 p-4 rounded-full"><i
-                            class="fas fa-chalkboard-teacher text-2xl text-green-600"></i></div>
-                </div>
-            </div>
-            <div class="stat-card bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Toplam Hikaye</p>
-                        <p class="text-3xl font-bold text-gray-800" id="totalStories">0</p>
-                    </div>
-                    <div class="bg-purple-100 p-4 rounded-full"><i class="fas fa-book text-2xl text-purple-600"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Toplam Veli</p>
-                        <p class="text-3xl font-bold text-gray-800" id="totalParents">0</p>
-                    </div>
-                    <div class="bg-orange-100 p-4 rounded-full"><i class="fas fa-users text-2xl text-orange-600"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Management Sections -->
-        <div class="grid md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4"><i class="fas fa-book mr-2 text-purple-600"></i>Hikaye
-                    Yönetimi</h2>
-                <div class="space-y-3 mb-4">
-                    <div class="flex justify-between"><span class="text-gray-600">2. Sınıf</span><span
-                            class="font-bold text-purple-600" id="grade2Stories">0</span></div>
-                    <div class="flex justify-between"><span class="text-gray-600">3. Sınıf</span><span
-                            class="font-bold text-purple-600" id="grade3Stories">0</span></div>
-                    <div class="flex justify-between"><span class="text-gray-600">4. Sınıf</span><span
-                            class="font-bold text-purple-600" id="grade4Stories">0</span></div>
-                </div>
-                <button onclick="window.location.href='story-management.html'"
-                    class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700">
-                    <i class="fas fa-cog mr-2"></i>Hikayeleri Yönet
-                </button>
-            </div>
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4"><i
-                        class="fas fa-users-cog mr-2 text-blue-600"></i>Kullanıcı Yönetimi</h2>
-                <div class="space-y-3 mb-4">
-                    <div class="flex justify-between"><span class="text-gray-600">Öğrenciler</span><span
-                            class="font-bold text-blue-600" id="userStudents">0</span></div>
-                    <div class="flex justify-between"><span class="text-gray-600">Öğretmenler</span><span
-                            class="font-bold text-blue-600" id="userTeachers">0</span></div>
-                    <div class="flex justify-between"><span class="text-gray-600">Veliler</span><span
-                            class="font-bold text-blue-600" id="userParents">0</span></div>
-                </div>
-                <button onclick="window.location.href='user-management.html'"
-                    class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
-                    <i class="fas fa-user-plus mr-2"></i>Kullanıcıları Yönet
-                </button>
-            </div>
-        </div>
-
-        <!-- System Statistics -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-chart-line mr-2 text-green-600"></i>Sistem
-                    İstatistikleri</h2>
-                <button onclick="window.location.href='statistics.html'"
-                    class="text-purple-600 hover:text-purple-700 font-semibold">
-                    Detaylı İstatistikler <i class="fas fa-arrow-right ml-1"></i>
-                </button>
-            </div>
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="text-center p-4 bg-green-50 rounded-lg">
-                    <p class="text-sm text-gray-600 mb-2">Toplam Okuma</p>
-                    <p class="text-3xl font-bold text-green-600" id="totalReadings">0</p>
-                </div>
-                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                    <p class="text-sm text-gray-600 mb-2">Toplam Pratik</p>
-                    <p class="text-3xl font-bold text-blue-600" id="totalPractices">0</p>
-                </div>
-                <div class="text-center p-4 bg-purple-50 rounded-lg">
-                    <p class="text-sm text-gray-600 mb-2">Ortalama Quiz</p>
-                    <p class="text-3xl font-bold text-purple-600" id="avgQuizScore">0</p>
-                </div>
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad
+                            Soyad</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Rows will be populated here -->
+                </tbody>
+            </table>
+            <div id="noUsersMessage" class="hidden p-8 text-center text-gray-500">
+                Onay bekleyen kullanıcı bulunmamaktadır.
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
-    <script src="../js/announcement.js"></script>
     <script>
+        // Check Auth using auth.js
         if (!checkAuth()) window.location.href = '../login.html';
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || user.rol !== 'yonetici') { alert('Erişim yetkiniz yok!'); window.location.href = '../login.html'; }
-        document.getElementById('userName').textContent = user.ad_soyad || user.email;
-
-        async function loadStatistics() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/admin/statistics`, {
-                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-                });
-                if (!response.ok) throw new Error('Failed');
-                const data = await response.json();
-                document.getElementById('totalStudents').textContent = data.users.students || 0;
-                document.getElementById('totalTeachers').textContent = data.users.teachers || 0;
-                document.getElementById('totalStories').textContent = data.stories.total || 0;
-                document.getElementById('totalParents').textContent = data.users.parents || 0;
-                document.getElementById('grade2Stories').textContent = data.stories.grade_2 || 0;
-                document.getElementById('grade3Stories').textContent = data.stories.grade_3 || 0;
-                document.getElementById('grade4Stories').textContent = data.stories.grade_4 || 0;
-                document.getElementById('userStudents').textContent = data.users.students || 0;
-                document.getElementById('userTeachers').textContent = data.users.teachers || 0;
-                document.getElementById('userParents').textContent = data.users.parents || 0;
-                document.getElementById('totalReadings').textContent = data.activity.total_readings || 0;
-                document.getElementById('totalPractices').textContent = data.activity.total_practices || 0;
-                document.getElementById('avgQuizScore').textContent = data.activity.avg_quiz_score?.toFixed(1) || '0.0';
-            } catch (e) { console.error(e); }
+        const user = getCurrentUserInfo();
+        if (user.rol !== 'yonetici') {
+            alert('Yetkisiz erişim!');
+            window.location.href = '../index.html';
         }
-        loadStatistics();
-        function performLogout() { localStorage.clear(); window.location.href = '../login.html'; }
-        function getAuthToken() { return localStorage.getItem('token'); }
+        document.getElementById('userName').textContent = user.ad_soyad;
+
+        async function loadPendingUsers() {
+            try {
+                const users = await API.getPendingUsers();
+                const tbody = document.getElementById('usersTableBody');
+                const noUsers = document.getElementById('noUsersMessage');
+
+                tbody.innerHTML = '';
+
+                if (users.length === 0) {
+                    noUsers.classList.remove('hidden');
+                    return;
+                }
+
+                noUsers.classList.add('hidden');
+                users.forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${u.ad_soyad}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${u.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap capitalize">${u.rol}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button onclick="handleApprove(${u.id})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition">
+                                <i class="fas fa-check mr-1"></i> Onayla
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        async function handleApprove(userId) {
+            if (!confirm('Bu kullanıcıyı onaylamak istediğinize emin misiniz?')) return;
+            try {
+                await API.approveUser(userId);
+                alert('Kullanıcı onaylandı.');
+                loadPendingUsers();
+            } catch (error) {
+                alert('Onaylama başarısız oldu.');
+                console.error(error);
+            }
+        }
+
+        // Initialize
+        loadPendingUsers();
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '../login.html';
+        }
     </script>
 </body>
 

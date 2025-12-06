@@ -34,23 +34,32 @@ class UserResponse(BaseModel):
     rol: UserRole
     sinif_duzeyi: Optional[int]
     parent_id: Optional[int]
+    is_approved: bool
     
     class Config:
         from_attributes = True
 
+class MessageResponse(BaseModel):
+    success: bool
+    message: str
+
 @router.get("/users", response_model=List[UserResponse])
 async def list_users(
     rol: Optional[UserRole] = None,
+    pending: Optional[bool] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.ADMIN))
 ):
     """
-    List all users, optionally filtered by role
+    List all users, optionally filtered by role and pending status
     """
     query = db.query(User)
     
     if rol:
         query = query.filter(User.rol == rol)
+    
+    if pending:
+        query = query.filter(User.is_approved == False)
     
     users = query.order_by(User.rol, User.ad_soyad).all()
     return users
@@ -74,10 +83,10 @@ async def create_user(
     
     # Validate grade level for students
     if user_data.rol == UserRole.STUDENT:
-        if not user_data.sinif_duzeyi or user_data.sinif_duzeyi not in [2, 3, 4]:
+        if not user_data.sinif_duzeyi or not (1 <= user_data.sinif_duzeyi <= 12):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Students must have a valid grade level (2, 3, or 4)"
+                detail="Students must have a valid grade level (1-12)"
             )
     
     # Hash password
@@ -89,7 +98,8 @@ async def create_user(
         email=user_data.email,
         password_hash=password_hash,
         rol=user_data.rol,
-        sinif_duzeyi=user_data.sinif_duzeyi
+        sinif_duzeyi=user_data.sinif_duzeyi,
+        is_approved=True # Admin created users are approved by default
     )
     
     db.add(new_user)
@@ -102,7 +112,7 @@ async def create_user(
         if student and student.rol == UserRole.STUDENT:
             student.parent_id = new_user.id
             db.commit()
-    
+            
     return new_user
 
 @router.put("/users/{user_id}", response_model=UserResponse)
@@ -147,10 +157,10 @@ async def update_user(
         user.rol = user_data.rol
     
     if user_data.sinif_duzeyi is not None:
-        if user_data.sinif_duzeyi not in [2, 3, 4, None]:
+        if not (1 <= user_data.sinif_duzeyi <= 12):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Grade level must be 2, 3, 4, or null"
+                detail="Grade level must be 1-12 or null"
             )
         user.sinif_duzeyi = user_data.sinif_duzeyi
     
@@ -190,6 +200,27 @@ async def delete_user(
     db.commit()
     
     return None
+
+@router.post("/users/{user_id}/approve", response_model=MessageResponse)
+async def approve_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.ADMIN))
+):
+    """
+    Approve a pending user
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    user.is_approved = True
+    db.commit()
+    
+    return {"success": True, "message": "User approved successfully"}
 
 @router.get("/statistics")
 async def get_statistics(

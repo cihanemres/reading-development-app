@@ -48,6 +48,32 @@ def run_migration():
         except Exception as e:
             print(f"Skipped (maybe exists): {e}")
 
+        print("Creating 'assignments' table...")
+        try:
+            connection.execute(text("""
+                CREATE TABLE IF NOT EXISTS assignments (
+                    id SERIAL PRIMARY KEY,
+                    teacher_id INTEGER NOT NULL REFERENCES users(id),
+                    student_id INTEGER NOT NULL REFERENCES users(id),
+                    story_id INTEGER NOT NULL REFERENCES stories(id),
+                    status VARCHAR(50) DEFAULT 'bekliyor',
+                    assigned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                    due_date TIMESTAMP WITH TIME ZONE,
+                    completed_at TIMESTAMP WITH TIME ZONE
+                )
+            """))
+            print("Success.")
+        except Exception as e:
+            print(f"Error creating assignments table: {e}")
+
+        print("Adding 'is_approved' column to 'users' table...")
+        try:
+            connection.execute(text("ALTER TABLE users ADD COLUMN is_approved BOOLEAN DEFAULT FALSE"))
+            connection.execute(text("UPDATE users SET is_approved = TRUE"))
+            print("Success.")
+        except Exception as e:
+            print(f"Skipped (maybe exists): {e}")
+
         connection.commit()
     
     print("Migration completed.")

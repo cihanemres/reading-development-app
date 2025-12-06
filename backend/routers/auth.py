@@ -88,7 +88,7 @@ class MessageResponse(BaseModel):
 
 # ==================== AUTHENTICATION ENDPOINTS ====================
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def register(request: RegisterRequest, db: Session = Depends(get_db)):
     """
     Register a new user with password strength validation
@@ -103,10 +103,10 @@ async def register(request: RegisterRequest, db: Session = Depends(get_db)):
     
     # Validate grade level for students
     if request.rol == UserRole.STUDENT:
-        if not request.sinif_duzeyi or request.sinif_duzeyi not in [2, 3, 4]:
+        if not request.sinif_duzeyi or not (1 <= request.sinif_duzeyi <= 12):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Students must have a valid grade level (2, 3, or 4)"
+                detail="Students must have a valid grade level (1-12)"
             )
     
     # Hash password
@@ -119,31 +119,17 @@ async def register(request: RegisterRequest, db: Session = Depends(get_db)):
         password_hash=password_hash,
         rol=request.rol,
         sinif_duzeyi=request.sinif_duzeyi,
-        parent_id=request.parent_id
+        parent_id=request.parent_id,
+        is_approved=False # Explicitly set to False
     )
     
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
-    # Create access token
-    token_data = {
-        "user_id": new_user.id,
-        "email": new_user.email,
-        "rol": new_user.rol.value
-    }
-    access_token = create_access_token(token_data)
-    
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": new_user.id,
-            "ad_soyad": new_user.ad_soyad,
-            "email": new_user.email,
-            "rol": new_user.rol.value,
-            "sinif_duzeyi": new_user.sinif_duzeyi
-        }
+        "success": True, 
+        "message": "Kayıt başarılı. Yönetici onayı bekleniyor."
     }
 
 @router.post("/login", response_model=TokenResponse)
@@ -165,6 +151,13 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
+        )
+    
+    # Check approval
+    if not user.is_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hesabınız henüz onaylanmadı. Lütfen yönetici onayını bekleyin."
         )
     
     # Create access token

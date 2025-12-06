@@ -70,7 +70,12 @@ const API = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
-        return response.json();
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'Giriş başarısız');
+        }
+        return data;
     },
 
     async register(userData) {
@@ -79,7 +84,12 @@ const API = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData)
         });
-        return response.json();
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.detail || 'Kayıt başarısız');
+        }
+        return data;
     },
 
     // Stories
@@ -310,6 +320,19 @@ const API = {
 
     async getMyBadges() {
         const response = await apiRequest('/gamification/badges/me');
+        return response.json();
+    },
+
+    // Admin
+    async getPendingUsers() {
+        const response = await apiRequest('/admin/users?pending=true');
+        return response.json();
+    },
+
+    async approveUser(userId) {
+        const response = await apiRequest(`/admin/users/${userId}/approve`, {
+            method: 'POST'
+        });
         return response.json();
     }
 };
