@@ -19,12 +19,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS Configuration - TEMPORARY: Allow all origins for debugging
-# allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000,https://okuma-frontend.onrender.com,https://okuma-backend.onrender.com").split(",")
+# CORS Configuration
+# Use env var for specific origins (wildcard doesn't work with credentials)
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://okuma-frontend.onrender.com").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TEMPORARY: Allow all origins
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
