@@ -110,7 +110,7 @@
         // Check Auth using auth.js
         if (!checkAuth()) window.location.href = '../login.html';
         const user = getCurrentUserInfo();
-        if (user.rol !== 'yonetici') {
+        if (user.rol !== 'yonetici' && user.rol !== 'ogretmen') {
             alert('Yetkisiz erişim!');
             window.location.href = '../index.html';
         }
