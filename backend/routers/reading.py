@@ -6,6 +6,8 @@ from database import get_db
 from models.user import User, UserRole
 from models.reading_activity import PreReading, Practice, Answer
 from models.story import Story
+from models.speech_practice import SpeechPracticeRecord
+import json
 from auth.dependencies import get_current_user
 from utils.word_counter import calculate_reading_speed
 from utils.progress_calculator import calculate_improvement
@@ -55,6 +57,33 @@ class AnswerResponse(BaseModel):
     q4: Optional[str]
     acik_uclu: Optional[str]
     
+    class Config:
+        from_attributes = True
+
+# Speech practice schemas
+class SpeechPracticeCreate(BaseModel):
+    story_id: int
+    dogru_kelime: int
+    hatali_kelime: int
+    atlanan_kelime: int
+    toplam_kelime: int
+    dogruluk_orani: float
+    hatali_kelimeler: Optional[List[str]] = None
+    algilanan_metin: Optional[str] = None
+
+class SpeechPracticeResponse(BaseModel):
+    id: int
+    ogrenci_id: int
+    hikaye_id: int
+    deneme_no: int
+    dogru_kelime: int
+    hatali_kelime: int
+    atlanan_kelime: int
+    toplam_kelime: int
+    dogruluk_orani: float
+    hatali_kelimeler: Optional[List[str]] = None
+    created_at: Optional[str] = None
+
     class Config:
         from_attributes = True
 
@@ -289,3 +318,99 @@ async def get_overall_progress(
         "summary": summary,
         "stories": stories_read
     }
+
+# Speech Practice Endpoints
+@router.post("/speech-practice", response_model=SpeechPracticeResponse, status_code=status.HTTP_201_CREATED)
+async def save_speech_practice(
+    data: SpeechPracticeCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Save speech practice results
+    """
+    if current_user.rol != UserRole.STUDENT:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can save speech practice"
+        )
+    
+    # Verify story exists
+    story = db.query(Story).filter(Story.id == data.story_id).first()
+    if not story:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Story not found"
+        )
+    
+    # Get next attempt number
+    last_attempt = db.query(SpeechPracticeRecord).filter(
+        SpeechPracticeRecord.ogrenci_id == current_user.id,
+        SpeechPracticeRecord.hikaye_id == data.story_id
+    ).order_by(SpeechPracticeRecord.deneme_no.desc()).first()
+    
+    next_attempt = (last_attempt.deneme_no + 1) if last_attempt else 1
+    
+    # Create record
+    record = SpeechPracticeRecord(
+        ogrenci_id=current_user.id,
+        hikaye_id=data.story_id,
+        deneme_no=next_attempt,
+        dogru_kelime=data.dogru_kelime,
+        hatali_kelime=data.hatali_kelime,
+        atlanan_kelime=data.atlanan_kelime,
+        toplam_kelime=data.toplam_kelime,
+        dogruluk_orani=data.dogruluk_orani,
+        hatali_kelimeler=json.dumps(data.hatali_kelimeler) if data.hatali_kelimeler else None,
+        algilanan_metin=data.algilanan_metin
+    )
+    
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    
+    return SpeechPracticeResponse(
+        id=record.id,
+        ogrenci_id=record.ogrenci_id,
+        hikaye_id=record.hikaye_id,
+        deneme_no=record.deneme_no,
+        dogru_kelime=record.dogru_kelime,
+        hatali_kelime=record.hatali_kelime,
+        atlanan_kelime=record.atlanan_kelime,
+        toplam_kelime=record.toplam_kelime,
+        dogruluk_orani=record.dogruluk_orani,
+        hatali_kelimeler=json.loads(record.hatali_kelimeler) if record.hatali_kelimeler else None,
+        created_at=str(record.created_at) if record.created_at else None
+    )
+
+@router.get("/speech-history/{story_id}", response_model=List[SpeechPracticeResponse])
+async def get_speech_history(
+    story_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get speech practice history for a story
+    """
+    records = db.query(SpeechPracticeRecord).filter(
+        SpeechPracticeRecord.ogrenci_id == current_user.id,
+        SpeechPracticeRecord.hikaye_id == story_id
+    ).order_by(SpeechPracticeRecord.deneme_no.desc()).all()
+    
+    return [
+        SpeechPracticeResponse(
+            id=r.id,
+            ogrenci_id=r.ogrenci_id,
+            hikaye_id=r.hikaye_id,
+            deneme_no=r.deneme_no,
+            dogru_kelime=r.dogru_kelime,
+            hatali_kelime=r.hatali_kelime,
+            atlanan_kelime=r.atlanan_kelime,
+            toplam_kelime=r.toplam_kelime,
+            dogruluk_orani=r.dogruluk_orani,
+            hatali_kelimeler=json.loads(r.hatali_kelimeler) if r.hatali_kelimeler else None,
+            created_at=str(r.created_at) if r.created_at else None
+        )
+        for r in records
+    ]
+

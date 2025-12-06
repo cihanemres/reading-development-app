@@ -140,28 +140,28 @@
                 <i class="fas fa-microphone"></i>
                 Sesli Okuma Pratiği
             </h3>
-            
+
             <div id="browserWarning" class="browser-warning hidden">
                 <i class="fas fa-exclamation-triangle"></i>
                 Tarayıcınız sesli okuma özelliğini desteklemiyor. Lütfen Chrome veya Edge kullanın.
             </div>
-            
+
             <button id="recordBtn" class="record-btn record-btn-start">
                 <i class="fas fa-microphone"></i>
                 <span>Sesli Okumaya Başla</span>
             </button>
-            
+
             <div id="recordingIndicator" class="recording-indicator">
                 <div class="recording-dot"></div>
                 <span>Dinleniyor... Hikayeyi sesli okuyun</span>
             </div>
-            
+
             <div id="liveTranscript" class="live-transcript hidden">
                 <span class="live-transcript-label">Algılanan metin:</span>
                 <div id="transcriptText" class="live-transcript-text">...</div>
             </div>
         </div>
-        
+
         <!-- Speech Results Panel -->
         <div id="speechResultPanel" class="speech-result-panel">
             <h3 class="result-panel-title">
@@ -355,10 +355,10 @@
 
         // Initialize
         loadStory();
-        
+
         // Speech Recognition Setup
         let speechRecognition = null;
-        
+
         function initSpeechRecognition() {
             // Check browser support
             if (!SpeechRecognitionPractice.isSupported()) {
@@ -366,14 +366,14 @@
                 document.getElementById('recordBtn').disabled = true;
                 return;
             }
-            
+
             speechRecognition = new SpeechRecognitionPractice();
-            
+
             // Handle live results
             speechRecognition.onResult((result) => {
                 document.getElementById('transcriptText').textContent = result.combined || '...';
             });
-            
+
             // Handle errors
             speechRecognition.onError((error) => {
                 console.error('Speech recognition error:', error);
@@ -382,17 +382,17 @@
                 }
                 stopRecording();
             });
-            
+
             // Handle end
             speechRecognition.onEnd((finalTranscript) => {
                 showResults(finalTranscript);
             });
         }
-        
+
         // Record button handlers
         const recordBtn = document.getElementById('recordBtn');
         let isRecordingActive = false;
-        
+
         recordBtn.addEventListener('click', async () => {
             if (!isRecordingActive) {
                 await startRecording();
@@ -400,21 +400,21 @@
                 stopRecording();
             }
         });
-        
+
         async function startRecording() {
             if (!speechRecognition) {
                 initSpeechRecognition();
             }
-            
+
             try {
                 await speechRecognition.start();
                 isRecordingActive = true;
-                
+
                 // Update UI
                 recordBtn.classList.remove('record-btn-start');
                 recordBtn.classList.add('record-btn-stop');
                 recordBtn.innerHTML = '<i class="fas fa-stop"></i><span>Kaydı Durdur</span>';
-                
+
                 document.getElementById('recordingIndicator').classList.add('active');
                 document.getElementById('liveTranscript').classList.remove('hidden');
                 document.getElementById('transcriptText').textContent = 'Dinleniyor...';
@@ -424,46 +424,111 @@
                 alert('Kayıt başlatılamadı: ' + error.message);
             }
         }
-        
+
         function stopRecording() {
             if (speechRecognition) {
                 speechRecognition.stop();
             }
             isRecordingActive = false;
-            
+
             // Update UI
             recordBtn.classList.remove('record-btn-stop');
             recordBtn.classList.add('record-btn-start');
             recordBtn.innerHTML = '<i class="fas fa-microphone"></i><span>Sesli Okumaya Başla</span>';
-            
+
             document.getElementById('recordingIndicator').classList.remove('active');
         }
-        
-        function showResults(spokenText) {
+
+        async function showResults(spokenText) {
             if (!story || !spokenText) {
                 document.getElementById('liveTranscript').classList.add('hidden');
                 return;
             }
-            
+
             // Compare texts
             const results = TextComparator.compare(story.metin, spokenText);
-            
-            // Generate and show HTML
-            const html = TextComparator.generateResultHTML(results);
-            document.getElementById('comparisonResults').innerHTML = html;
+
+            // Get incorrect words list
+            const incorrectWords = results.wordResults
+                .filter(r => r.status === 'incorrect')
+                .map(r => r.original);
+
+            // Save to API
+            try {
+                const savedRecord = await API.saveSpeechPractice({
+                    story_id: parseInt(storyId),
+                    dogru_kelime: results.correctCount,
+                    hatali_kelime: results.incorrectCount,
+                    atlanan_kelime: results.missedCount,
+                    toplam_kelime: results.originalWords.length,
+                    dogruluk_orani: results.accuracy,
+                    hatali_kelimeler: incorrectWords,
+                    algilanan_metin: spokenText
+                });
+
+                // Add attempt number to results display
+                const attemptInfo = `<div class="attempt-info" style="margin-bottom: 1rem; padding: 0.75rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 0.5rem; text-align: center; font-weight: 600;">
+                    <i class="fas fa-flag-checkered"></i> Deneme #${savedRecord.deneme_no}
+                </div>`;
+
+                // Generate and show HTML
+                const html = attemptInfo + TextComparator.generateResultHTML(results);
+                document.getElementById('comparisonResults').innerHTML = html;
+
+                // Load and show history
+                await loadSpeechHistory();
+            } catch (error) {
+                console.error('Failed to save speech practice:', error);
+                // Still show results even if save fails
+                const html = TextComparator.generateResultHTML(results);
+                document.getElementById('comparisonResults').innerHTML = html;
+            }
+
             document.getElementById('speechResultPanel').classList.add('active');
-            
+
             // Scroll to results
             document.getElementById('speechResultPanel').scrollIntoView({ behavior: 'smooth' });
         }
-        
+
+        // Load speech practice history
+        async function loadSpeechHistory() {
+            try {
+                const history = await API.getSpeechHistory(storyId);
+                if (history && history.length > 0) {
+                    let historyHTML = `
+                        <div class="speech-history" style="margin-top: 1.5rem; padding: 1rem; background: #f7fafc; border-radius: 0.75rem;">
+                            <h4 style="margin-bottom: 1rem; color: #4a5568; font-weight: 600;">
+                                <i class="fas fa-history"></i> Okuma Geçmişi
+                            </h4>
+                            <div style="display: grid; gap: 0.5rem;">
+                    `;
+
+                    history.forEach(record => {
+                        const date = new Date(record.created_at).toLocaleDateString('tr-TR');
+                        historyHTML += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; background: white; border-radius: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                                <span style="font-weight: 500;">Deneme #${record.deneme_no}</span>
+                                <span style="color: ${record.dogruluk_orani >= 80 ? '#38a169' : record.dogruluk_orani >= 60 ? '#d69e2e' : '#e53e3e'}; font-weight: 600;">%${record.dogruluk_orani}</span>
+                                <span style="color: #718096; font-size: 0.875rem;">${date}</span>
+                            </div>
+                        `;
+                    });
+
+                    historyHTML += '</div></div>';
+                    document.getElementById('comparisonResults').innerHTML += historyHTML;
+                }
+            } catch (error) {
+                console.error('Failed to load speech history:', error);
+            }
+        }
+
         // Try again button
         document.getElementById('tryAgainBtn').addEventListener('click', () => {
             document.getElementById('speechResultPanel').classList.remove('active');
             document.getElementById('liveTranscript').classList.add('hidden');
             document.getElementById('transcriptText').textContent = '...';
         });
-        
+
         // Initialize speech recognition on page load
         initSpeechRecognition();
     </script>

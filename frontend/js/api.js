@@ -140,6 +140,20 @@ const API = {
         return response.json();
     },
 
+    // Speech Practice
+    async saveSpeechPractice(data) {
+        const response = await apiRequest('/reading/speech-practice', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        return response.json();
+    },
+
+    async getSpeechHistory(storyId) {
+        const response = await apiRequest(`/reading/speech-history/${storyId}`);
+        return response.json();
+    },
+
     // Teacher
     async getStudents(gradeLevel = null, search = null) {
         let url = '/teacher/students';
