@@ -345,8 +345,8 @@
                 `).join('');
 
             } catch (error) {
-                console.error(error);
-                container.innerHTML = '<div class="col-span-full text-center text-red-500">Hata oluştu.</div>';
+                console.error('Story load error:', error);
+                container.innerHTML = `<div class="col-span-full text-center text-red-500 py-8"><i class="fas fa-exclamation-triangle text-4xl mb-4"></i><p>Hikayeler yüklenemedi: ${error.message || 'Bilinmeyen hata'}</p></div>`;
             }
         }
 
@@ -362,11 +362,13 @@
         });
 
         // Modal Functions
+        const noQuestionsMsgHTML = `<div class="text-center text-gray-500 py-4 bg-gray-50 rounded-lg border border-dashed border-gray-300" id="noQuestionsMsg">Henüz soru eklenmedi.</div>`;
+
         function showAddModal() {
             document.getElementById('modalTitle').textContent = 'Yeni İçerik';
             document.getElementById('storyForm').reset();
             document.getElementById('storyId').value = '';
-            document.getElementById('questionsList').innerHTML = document.getElementById('noQuestionsMsg').outerHTML;
+            document.getElementById('questionsList').innerHTML = noQuestionsMsgHTML;
             document.getElementById('storyModal').classList.remove('hidden');
             document.getElementById('storyModal').classList.add('flex');
         }
