@@ -27,7 +27,57 @@
 
     <!-- Main Content -->
     <div class="container mx-auto p-6">
-        <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Onay Bekleyen Kullanıcılar</h2>
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- User Management -->
+            <a href="user-management.html" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition group">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 p-3 rounded-lg group-hover:bg-blue-200 transition">
+                        <i class="fas fa-users text-2xl text-blue-600"></i>
+                    </div>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Kullanıcı Yönetimi</h3>
+                <p class="text-sm text-gray-500 mt-1">Tüm kullanıcıları yönet</p>
+            </a>
+
+            <!-- Story Management -->
+            <a href="story-management.html" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition group">
+                <div class="flex items-center mb-4">
+                    <div class="bg-purple-100 p-3 rounded-lg group-hover:bg-purple-200 transition">
+                        <i class="fas fa-book text-2xl text-purple-600"></i>
+                    </div>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Hikaye Yönetimi</h3>
+                <p class="text-sm text-gray-500 mt-1">Hikaye ekle/düzenle</p>
+            </a>
+
+            <!-- Statistics -->
+            <a href="statistics.html" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition group">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 p-3 rounded-lg group-hover:bg-green-200 transition">
+                        <i class="fas fa-chart-bar text-2xl text-green-600"></i>
+                    </div>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">İstatistikler</h3>
+                <p class="text-sm text-gray-500 mt-1">Sistem raporları</p>
+            </a>
+
+            <!-- Quiz Management -->
+            <a href="quiz-management.html" class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition group">
+                <div class="flex items-center mb-4">
+                    <div class="bg-yellow-100 p-3 rounded-lg group-hover:bg-yellow-200 transition">
+                        <i class="fas fa-question-circle text-2xl text-yellow-600"></i>
+                    </div>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Quiz Yönetimi</h3>
+                <p class="text-sm text-gray-500 mt-1">Soruları yönet</p>
+            </a>
+        </div>
+
+        <!-- Pending Users Section -->
+        <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">
+            <i class="fas fa-user-clock mr-2 text-orange-500"></i>Onay Bekleyen Kullanıcılar
+        </h2>
 
         <div class="bg-white rounded-xl shadow-md overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
