@@ -20,15 +20,19 @@ app = FastAPI(
 )
 
 # CORS Configuration
-# Use env var for specific origins (wildcard doesn't work with credentials)
+# Debug: print allowed origins at startup
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://okuma-frontend.onrender.com").split(",")
+# Strip whitespace from origins
+allowed_origins = [origin.strip() for origin in allowed_origins]
+print(f"🔧 CORS Allowed Origins: {allowed_origins}")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Mount static files
