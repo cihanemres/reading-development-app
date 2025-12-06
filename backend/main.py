@@ -19,21 +19,42 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS Configuration
-# Debug: print allowed origins at startup
+# CORS Configuration - Manual implementation for reliability
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://okuma-frontend.onrender.com").split(",")
-# Strip whitespace from origins
 allowed_origins = [origin.strip() for origin in allowed_origins]
 print(f"🔧 CORS Allowed Origins: {allowed_origins}")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
+class CORSMiddlewareManual(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        origin = request.headers.get("origin", "")
+        
+        # Handle preflight OPTIONS request
+        if request.method == "OPTIONS":
+            response = Response(status_code=200)
+            response.headers["Access-Control-Allow-Origin"] = origin if origin in allowed_origins else allowed_origins[0]
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Max-Age"] = "600"
+            return response
+        
+        response = await call_next(request)
+        
+        # Add CORS headers to all responses
+        if origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+        else:
+            response.headers["Access-Control-Allow-Origin"] = allowed_origins[0]
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        
+        return response
+
+app.add_middleware(CORSMiddlewareManual)
 
 # Mount static files
 os.makedirs("static/uploads/images", exist_ok=True)
