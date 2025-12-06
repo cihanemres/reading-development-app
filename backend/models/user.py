@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, DateTime, Enum as SQLEnum, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -19,8 +19,9 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     rol = Column(SQLEnum(UserRole), nullable=False)
-    sinif_duzeyi = Column(Integer, nullable=True)  # Only for students (2, 3, or 4)
-    parent_id = Column(Integer, nullable=True)  # For linking student to parent
+    sinif_duzeyi = Column(Integer, nullable=True)  # Only for students (1-12)
+    parent_id = Column(Integer, nullable=True)  # For linking student to parent (Legacy, no FK)
+    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Linked teacher
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

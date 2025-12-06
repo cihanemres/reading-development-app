@@ -33,6 +33,9 @@ class EvaluationCreate(BaseModel):
     acik_soru_puani: Optional[int] = None
     ogretmen_yorumu: Optional[str] = None
 
+class AssignStudentRequest(BaseModel):
+    student_email: str
+
 class EvaluationResponse(BaseModel):
     id: int
     ogrenci_id: int
@@ -51,12 +54,20 @@ async def get_students(
     sinif_duzeyi: Optional[int] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.TEACHER))
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Get list of students, optionally filtered by grade level and search term
+    Get list of students, optionally filtered by grade level and search term.
+    Teachers only see their own students. Admins see all.
     """
+    if current_user.rol not in [UserRole.TEACHER, UserRole.ADMIN]:
+         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+
     query = db.query(User).filter(User.rol == UserRole.STUDENT)
+    
+    # Filter by teacher if role is Teacher
+    if current_user.rol == UserRole.TEACHER:
+        query = query.filter(User.teacher_id == current_user.id)
     
     if sinif_duzeyi:
         query = query.filter(User.sinif_duzeyi == sinif_duzeyi)
@@ -67,6 +78,35 @@ async def get_students(
     
     students = query.order_by(User.ad_soyad).all()
     return students
+
+@router.post("/assign-student")
+async def assign_student(
+    data: AssignStudentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Assign a student to the current teacher (or Admin logic)
+    """
+    if current_user.rol not in [UserRole.TEACHER, UserRole.ADMIN]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+        
+    student = db.query(User).filter(User.email == data.student_email, User.rol == UserRole.STUDENT).first()
+    if not student:
+         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found with this email")
+         
+    # Assign to current user (if teacher)
+    if current_user.rol == UserRole.TEACHER:
+        student.teacher_id = current_user.id
+    # If admin, logic might differ, but for now allow Admin to assign to themselves or ignore
+    # Let's say Admin can assign to themselves for testing
+    else:
+        # TODO: Allow Admin to specify teacher_id in future
+        student.teacher_id = current_user.id 
+
+    db.commit()
+    
+    return {"message": "Student assigned successfully", "student": student.ad_soyad}
 
 @router.get("/student/{student_id}/progress")
 async def get_student_progress(

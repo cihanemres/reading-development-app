@@ -41,6 +41,13 @@ def run_migration():
         except Exception as e:
             print(f"Skipped (maybe exists): {e}")
 
+        print("Adding 'teacher_id' column to 'users' table...")
+        try:
+            connection.execute(text("ALTER TABLE users ADD COLUMN teacher_id INTEGER REFERENCES users(id)"))
+            print("Success.")
+        except Exception as e:
+            print(f"Skipped (maybe exists): {e}")
+
         connection.commit()
     
     print("Migration completed.")

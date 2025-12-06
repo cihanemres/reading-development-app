@@ -188,6 +188,14 @@ const API = {
         return response.json();
     },
 
+    async assignStudent(email) {
+        const response = await apiRequest('/teacher/assign-student', {
+            method: 'POST',
+            body: JSON.stringify({ student_email: email })
+        });
+        return response.json();
+    },
+
     async getPendingReviews() {
         const response = await apiRequest('/teacher/pending-reviews');
         return response.json();
