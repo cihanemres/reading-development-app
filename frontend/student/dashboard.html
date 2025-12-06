@@ -203,6 +203,17 @@
         </div>
     </div>
 
+    <!-- Assignments Section -->
+    <div class="container mx-auto px-6 mb-8 hidden" id="assignmentsSection">
+        <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2 flex items-center gap-2">
+            <i class="fas fa-tasks text-yellow-500"></i>
+            Ödevlerim
+        </h2>
+        <div id="assignmentsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Assignment cards -->
+        </div>
+    </div>
+
     <!-- All Badges Modal (kept for compatibility if needed) -->
     <!-- ... -->
 
@@ -227,7 +238,40 @@
             window.location.href = '../login.html';
         }
 
+        async function loadAssignments() {
+            const section = document.getElementById('assignmentsSection');
+            const container = document.getElementById('assignmentsContainer');
+
+            try {
+                const assignments = await API.getMyAssignments();
+                if (!assignments || assignments.length === 0) {
+                    section.classList.add('hidden');
+                    return;
+                }
+
+                section.classList.remove('hidden');
+                container.innerHTML = assignments.map(a => {
+                    const dueDate = a.due_date ? new Date(a.due_date).toLocaleDateString('tr-TR') : 'Tarih Yok';
+                    return `
+                    <div class="bg-white rounded-xl shadow-sm border-l-4 border-yellow-400 p-4 hover:shadow-md transition">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-semibold">Ödev</span>
+                            <span class="text-xs text-red-500 font-medium"><i class="far fa-clock mr-1"></i>${dueDate}</span>
+                        </div>
+                        <h3 class="font-bold text-gray-800 mb-1 truncate">${a.story_title}</h3>
+                        <p class="text-sm text-gray-600 mb-3 line-clamp-1">${a.subject}</p>
+                        <a href="story-view.html?id=${a.story_id}" class="block text-center w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition font-medium shadow-sm">
+                            <i class="fas fa-play mr-1"></i> Başla
+                        </a>
+                    </div>
+                `}).join('');
+            } catch (e) {
+                console.error("Assignment load error", e);
+            }
+        }
+
         async function loadStories() {
+            loadAssignments();
             const container = document.getElementById('storiesContainer');
             const noStories = document.getElementById('noStories');
 

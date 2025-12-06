@@ -330,8 +330,11 @@
                                 ${story.sorular ? `<span><i class="fas fa-question-circle mr-1"></i>Soru var</span>` : ''}
                             </div>
                         </div>
-                        <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-between items-center">
-                             <button onclick="editStory(${story.id})" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-between items-center space-x-2">
+                                 <button onclick="openAssignModal(${story.id}, '${story.baslik.replace(/'/g, "\\'")}')" class="text-orange-600 hover:text-orange-800 text-sm font-medium flex-1 text-center">
+                                    <i class="fas fa-tasks mr-1"></i>Ödev
+                                </button>
+                                 <button onclick="editStory(${story.id})" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex-1 text-center">
                                 <i class="fas fa-edit mr-1"></i>Düzenle
                             </button>
                              <button onclick="deleteStory(${story.id})" class="text-red-600 hover:text-red-800 text-sm font-medium">
@@ -531,6 +534,96 @@
                 'İngilizce': 'indigo-500'
             };
             return colors[subject] || 'purple-600'; // tailwind safelist gerekebilir
+        }
+    </script>
+    <!-- Assign Modal -->
+    <div id="assignModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl w-full max-w-md mx-4 p-6 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">Ödev Ata</h3>
+            <p class="text-sm text-gray-600 mb-4">Seçilen Hikaye: <span id="assignStoryTitle"
+                    class="font-semibold text-purple-600"></span></p>
+
+            <input type="hidden" id="assignStoryId">
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Teslim Tarihi</label>
+                <input type="date" id="assignDueDate" class="w-full border border-gray-300 rounded-lg p-2">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Öğrenciler</label>
+                <div id="studentListContainer"
+                    class="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-2">
+                    <!-- Checkboxes -->
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button
+                    onclick="document.getElementById('assignModal').classList.add('hidden'); document.getElementById('assignModal').classList.remove('flex');"
+                    class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">İptal</button>
+                <button onclick="submitAssignment()"
+                    class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">Ödev Ver</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function openAssignModal(storyId, storyTitle) {
+            document.getElementById('assignStoryId').value = storyId;
+            document.getElementById('assignStoryTitle').textContent = storyTitle;
+            document.getElementById('assignDueDate').value = '';
+            document.getElementById('assignModal').classList.remove('hidden');
+            document.getElementById('assignModal').classList.add('flex');
+
+            // Load Students
+            const container = document.getElementById('studentListContainer');
+            container.innerHTML = '<div class="text-center py-2"><i class="fas fa-spinner fa-spin text-purple-600"></i> Yükleniyor...</div>';
+
+            try {
+                const response = await apiRequest('/teacher/students');
+                const students = await response.json();
+
+                container.innerHTML = '';
+                if (!students || students.length === 0) {
+                    container.innerHTML = '<p class="text-sm text-gray-500 text-center">Öğrencilik bulunamadı.</p>';
+                    return;
+                }
+
+                students.forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center hover:bg-gray-50 p-1 rounded transition';
+                    div.innerHTML = `
+                        <input type="checkbox" id="student_${s.id}" value="${s.id}" class="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 student-checkbox">
+                        <label for="student_${s.id}" class="ml-2 text-sm text-gray-700 cursor-pointer flex-1 select-none">${s.ad_soyad}</label>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                container.innerHTML = '<p class="text-red-500 text-sm text-center">Yüklenirken hata oluştu.</p>';
+                console.error(e);
+            }
+        }
+
+        async function submitAssignment() {
+            const storyId = document.getElementById('assignStoryId').value;
+            const dueDate = document.getElementById('assignDueDate').value;
+            const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+            const studentIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+            if (studentIds.length === 0) {
+                alert('Lütfen en az bir öğrenci seçin.');
+                return;
+            }
+
+            try {
+                await API.createAssignment(storyId, studentIds, dueDate || null);
+                alert('Ödev başarıyla atandı!');
+                document.getElementById('assignModal').classList.add('hidden');
+                document.getElementById('assignModal').classList.remove('flex');
+            } catch (e) {
+                alert('Ödev atanırken hata oluştu: ' + (e.message || e.detail || 'Bilinmeyen hata'));
+            }
         }
     </script>
 </body>

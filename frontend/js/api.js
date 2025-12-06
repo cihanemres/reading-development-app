@@ -334,6 +334,20 @@ const API = {
             method: 'POST'
         });
         return response.json();
+    },
+
+    // Assignments
+    async createAssignment(storyId, studentIds, dueDate) {
+        const response = await apiRequest('/assignments/', {
+            method: 'POST',
+            body: JSON.stringify({ story_id: storyId, student_ids: studentIds, due_date: dueDate })
+        });
+        return response.json();
+    },
+
+    async getMyAssignments() {
+        const response = await apiRequest('/assignments/student/me');
+        return response.json();
     }
 };
 
