@@ -210,10 +210,10 @@ class TextComparator {
     }
 
     /**
-     * Compare original text with spoken text
+     * Compare original text with spoken text using fuzzy matching
      * Returns detailed comparison results
      */
-    static compare(originalText, spokenText, similarityThreshold = 0.75) {
+    static compare(originalText, spokenText, similarityThreshold = 0.70) {
         const originalWords = this.tokenize(originalText);
         const spokenWords = this.tokenize(spokenText);
 
@@ -228,15 +228,74 @@ class TextComparator {
             accuracy: 0
         };
 
-        // Simple sequential comparison
-        const maxLen = Math.max(originalWords.length, spokenWords.length);
+        // Track which spoken words have been used
+        const usedSpokenIndices = new Set();
 
+        // For each original word, find the best matching spoken word
         for (let i = 0; i < originalWords.length; i++) {
             const originalWord = originalWords[i];
-            const spokenWord = spokenWords[i] || '';
+            let bestMatch = null;
+            let bestSimilarity = 0;
+            let bestIndex = -1;
 
-            if (!spokenWord) {
-                // Word was not spoken
+            // Search in a window around the expected position
+            const searchStart = Math.max(0, i - 5);
+            const searchEnd = Math.min(spokenWords.length, i + 10);
+
+            for (let j = searchStart; j < searchEnd; j++) {
+                if (usedSpokenIndices.has(j)) continue;
+
+                const spokenWord = spokenWords[j];
+                const sim = this.similarity(originalWord, spokenWord);
+
+                // Prefer matches closer to expected position
+                const positionBonus = 1 - (Math.abs(i - j) * 0.02);
+                const adjustedSim = sim * positionBonus;
+
+                if (adjustedSim > bestSimilarity) {
+                    bestSimilarity = adjustedSim;
+                    bestMatch = spokenWord;
+                    bestIndex = j;
+                }
+            }
+
+            // Also check exact match anywhere (for words that might be far)
+            if (bestSimilarity < 0.9) {
+                for (let j = 0; j < spokenWords.length; j++) {
+                    if (usedSpokenIndices.has(j)) continue;
+                    if (j >= searchStart && j < searchEnd) continue; // Already checked
+
+                    const spokenWord = spokenWords[j];
+                    if (spokenWord === originalWord) {
+                        bestSimilarity = 1;
+                        bestMatch = spokenWord;
+                        bestIndex = j;
+                        break;
+                    }
+                }
+            }
+
+            if (bestMatch && bestSimilarity >= similarityThreshold) {
+                usedSpokenIndices.add(bestIndex);
+                results.wordResults.push({
+                    original: originalWord,
+                    spoken: bestMatch,
+                    status: 'correct',
+                    similarity: bestSimilarity
+                });
+                results.correctCount++;
+            } else if (bestMatch && bestSimilarity >= 0.5) {
+                // Partial match - close but not quite
+                usedSpokenIndices.add(bestIndex);
+                results.wordResults.push({
+                    original: originalWord,
+                    spoken: bestMatch,
+                    status: 'incorrect',
+                    similarity: bestSimilarity
+                });
+                results.incorrectCount++;
+            } else {
+                // No good match found
                 results.wordResults.push({
                     original: originalWord,
                     spoken: '',
@@ -244,33 +303,11 @@ class TextComparator {
                     similarity: 0
                 });
                 results.missedCount++;
-            } else {
-                const sim = this.similarity(originalWord, spokenWord);
-
-                if (sim >= similarityThreshold) {
-                    results.wordResults.push({
-                        original: originalWord,
-                        spoken: spokenWord,
-                        status: 'correct',
-                        similarity: sim
-                    });
-                    results.correctCount++;
-                } else {
-                    results.wordResults.push({
-                        original: originalWord,
-                        spoken: spokenWord,
-                        status: 'incorrect',
-                        similarity: sim
-                    });
-                    results.incorrectCount++;
-                }
             }
         }
 
-        // Check for extra words spoken
-        if (spokenWords.length > originalWords.length) {
-            results.extraCount = spokenWords.length - originalWords.length;
-        }
+        // Count extra words
+        results.extraCount = Math.max(0, spokenWords.length - usedSpokenIndices.size);
 
         // Calculate accuracy
         if (originalWords.length > 0) {
