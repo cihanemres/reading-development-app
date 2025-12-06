@@ -28,6 +28,9 @@ class User(Base):
     
     # Gamification relationships
     achievements = relationship("Achievement", back_populates="user")
+    
+    # Assignment relationships (as student)
+    assignments = relationship("Assignment", foreign_keys="Assignment.student_id", back_populates="student")
 
     def __repr__(self):
         return f"<User {self.email} ({self.rol})>"
