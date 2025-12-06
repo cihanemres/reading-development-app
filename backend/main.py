@@ -19,42 +19,27 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS Configuration - Manual implementation for reliability
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
+# CORS Configuration with explicit setup
+from starlette.middleware.cors import CORSMiddleware as StarletteCORS
 
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://okuma-frontend.onrender.com").split(",")
-allowed_origins = [origin.strip() for origin in allowed_origins]
-print(f"🔧 CORS Allowed Origins: {allowed_origins}")
+allowed_origins = [
+    "https://okuma-frontend.onrender.com",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000"
+]
 
-class CORSMiddlewareManual(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        origin = request.headers.get("origin", "")
-        
-        # Handle preflight OPTIONS request
-        if request.method == "OPTIONS":
-            response = Response(status_code=200)
-            response.headers["Access-Control-Allow-Origin"] = origin if origin in allowed_origins else allowed_origins[0]
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-            response.headers["Access-Control-Allow-Headers"] = "*"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Max-Age"] = "600"
-            return response
-        
-        response = await call_next(request)
-        
-        # Add CORS headers to all responses
-        if origin in allowed_origins:
-            response.headers["Access-Control-Allow-Origin"] = origin
-        else:
-            response.headers["Access-Control-Allow-Origin"] = allowed_origins[0]
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        
-        return response
+print(f"🔧 Adding CORS for origins: {allowed_origins}")
 
-app.add_middleware(CORSMiddlewareManual)
+# Use Starlette's CORS middleware correctly
+app.add_middleware(
+    StarletteCORS,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount static files
 os.makedirs("static/uploads/images", exist_ok=True)
