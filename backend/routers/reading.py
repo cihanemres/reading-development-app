@@ -32,6 +32,7 @@ class AnswerCreate(BaseModel):
     q3: Optional[str] = None
     q4: Optional[str] = None
     acik_uclu: Optional[str] = None
+    answers_json: Optional[List[dict]] = None
 
 class ReadingResponse(BaseModel):
     id: int
@@ -56,6 +57,7 @@ class AnswerResponse(BaseModel):
     q3: Optional[str]
     q4: Optional[str]
     acik_uclu: Optional[str]
+    answers_json: Optional[str]
     
     class Config:
         from_attributes = True
@@ -204,19 +206,41 @@ async def save_answers(
             detail="Story not found"
         )
     
-    # Calculate score
-    from models.quiz import QuizQuestion
-    questions = db.query(QuizQuestion).filter(QuizQuestion.story_id == data.story_id).order_by(QuizQuestion.id).all()
     correct_count = 0
     
-    # Map answers to indices (assuming questions are ordered by ID)
-    student_answers = [data.q1, data.q2, data.q3, data.q4]
-    
-    for i, q in enumerate(questions):
-        if i < 4:  # Only check first 4 questions (multiple choice)
-            student_ans = student_answers[i]
-            if student_ans and student_ans == q.correct_answer:
-                correct_count += 1
+    # Logic for NEW system (JSON based)
+    if story.sorular:
+        try:
+            story_questions = json.loads(story.sorular)
+            # data.answers_json expects a list of dicts: [{"index": 0, "answer": "A"}, ...] or similar
+            # Ideally frontend sends direct simple structure. 
+            # Let's assume data.answers_json is a list of answer objects matching question order or containing index.
+            
+            if data.answers_json:
+                for ans in data.answers_json:
+                    idx = ans.get('question_index')
+                    val = ans.get('answer')
+                    
+                    if idx is not None and 0 <= idx < len(story_questions):
+                        q = story_questions[idx]
+                        if q.get('cevap_tipi') == 'test' and q.get('dogru_cevap') == val:
+                             correct_count += 1
+        except Exception as e:
+            print(f"Error calculating score: {e}")
+            
+    # Logic for OLD system (QuizQuestion table)
+    else:
+        from models.quiz import QuizQuestion
+        questions = db.query(QuizQuestion).filter(QuizQuestion.story_id == data.story_id).order_by(QuizQuestion.id).all()
+        
+        # Map answers to indices
+        student_answers = [data.q1, data.q2, data.q3, data.q4]
+        
+        for i, q in enumerate(questions):
+            if i < 4:  # Only check first 4 questions
+                student_ans = student_answers[i]
+                if student_ans and student_ans == q.correct_answer:
+                    correct_count += 1
 
     # Check if answers already exist
     existing = db.query(Answer).filter(
@@ -231,6 +255,7 @@ async def save_answers(
         existing.q3 = data.q3
         existing.q4 = data.q4
         existing.acik_uclu = data.acik_uclu
+        existing.answers_json = json.dumps(data.answers_json) if data.answers_json else None
         existing.dogru_sayisi = correct_count
         db.commit()
         db.refresh(existing)
@@ -245,6 +270,7 @@ async def save_answers(
         q3=data.q3,
         q4=data.q4,
         acik_uclu=data.acik_uclu,
+        answers_json=json.dumps(data.answers_json) if data.answers_json else None,
         dogru_sayisi=correct_count
     )
     

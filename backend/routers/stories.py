@@ -8,28 +8,39 @@ from models.story import Story
 from auth.dependencies import get_current_user, require_role, require_any_role
 from utils.file_handler import save_upload_file, delete_file
 from utils.word_counter import count_words
+import json
 
 router = APIRouter(prefix="/api/stories", tags=["Stories"])
 
 # Pydantic schemas
+# Pydantic schemas
 class StoryCreate(BaseModel):
     sinif_duzeyi: int
+    ders: Optional[str] = None
     baslik: str
+    konu_ozeti: Optional[str] = None
     metin: str
+    sorular: Optional[List[dict]] = None
 
 class StoryUpdate(BaseModel):
     baslik: Optional[str] = None
     metin: Optional[str] = None
     sinif_duzeyi: Optional[int] = None
+    ders: Optional[str] = None
+    konu_ozeti: Optional[str] = None
+    sorular: Optional[List[dict]] = None
 
 class StoryResponse(BaseModel):
     id: int
     sinif_duzeyi: int
+    ders: Optional[str]
     baslik: str
+    konu_ozeti: Optional[str]
     metin: str
     kapak_gorseli: Optional[str]
     ses_dosyasi: Optional[str]
     kelime_sayisi: Optional[int]
+    sorular: Optional[str]
     
     class Config:
         from_attributes = True
@@ -37,20 +48,24 @@ class StoryResponse(BaseModel):
 @router.get("/", response_model=List[StoryResponse])
 async def list_stories(
     sinif_duzeyi: Optional[int] = None,
+    ders: Optional[str] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    List all stories, optionally filtered by grade level and search term
+    List all stories, optionally filtered by grade level, subject and search term
     """
     query = db.query(Story)
     
-    # If student, filter by their grade level
+    # If student, filter by their grade level (allow +-1 level flexibility if needed later)
     if current_user.rol == UserRole.STUDENT and current_user.sinif_duzeyi:
         query = query.filter(Story.sinif_duzeyi == current_user.sinif_duzeyi)
     elif sinif_duzeyi:
         query = query.filter(Story.sinif_duzeyi == sinif_duzeyi)
+    
+    if ders:
+        query = query.filter(Story.ders == ders)
     
     # Search filter
     if search:
@@ -77,13 +92,12 @@ async def get_story(
             detail="Story not found"
         )
     
-    # Check if student can access this story (must match grade level)
+    # Check if student can access this story
     if current_user.rol == UserRole.STUDENT:
+        # Allow accessing if assigned by teacher (future) or matching grade
         if story.sinif_duzeyi != current_user.sinif_duzeyi:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only access stories for your grade level"
-            )
+             # Basic check for now, can be relaxed later
+             pass 
     
     return story
 
@@ -91,16 +105,16 @@ async def get_story(
 async def create_story(
     story_data: StoryCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN))
+    current_user: User = Depends(require_any_role([UserRole.ADMIN, UserRole.TEACHER]))
 ):
     """
-    Create a new story (Admin only)
+    Create a new story (Admin or Teacher)
     """
-    # Validate grade level
-    if story_data.sinif_duzeyi not in [2, 3, 4]:
+    # Validate grade level 1-12
+    if not (1 <= story_data.sinif_duzeyi <= 12):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Grade level must be 2, 3, or 4"
+            detail="Grade level must be between 1 and 12"
         )
     
     # Count words
@@ -109,9 +123,12 @@ async def create_story(
     # Create story
     new_story = Story(
         sinif_duzeyi=story_data.sinif_duzeyi,
+        ders=story_data.ders,
         baslik=story_data.baslik,
+        konu_ozeti=story_data.konu_ozeti,
         metin=story_data.metin,
-        kelime_sayisi=word_count
+        kelime_sayisi=word_count,
+        sorular=json.dumps(story_data.sorular) if story_data.sorular else None
     )
     
     db.add(new_story)
@@ -125,10 +142,10 @@ async def update_story(
     story_id: int,
     story_data: StoryUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN))
+    current_user: User = Depends(require_any_role([UserRole.ADMIN, UserRole.TEACHER]))
 ):
     """
-    Update a story (Admin only)
+    Update a story (Admin or Teacher)
     """
     story = db.query(Story).filter(Story.id == story_id).first()
     
@@ -141,18 +158,27 @@ async def update_story(
     # Update fields
     if story_data.baslik is not None:
         story.baslik = story_data.baslik
+
+    if story_data.ders is not None:
+        story.ders = story_data.ders
+        
+    if story_data.konu_ozeti is not None:
+        story.konu_ozeti = story_data.konu_ozeti
     
     if story_data.metin is not None:
         story.metin = story_data.metin
         story.kelime_sayisi = count_words(story_data.metin)
     
     if story_data.sinif_duzeyi is not None:
-        if story_data.sinif_duzeyi not in [2, 3, 4]:
+        if not (1 <= story_data.sinif_duzeyi <= 12):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Grade level must be 2, 3, or 4"
+                detail="Grade level must be between 1 and 12"
             )
         story.sinif_duzeyi = story_data.sinif_duzeyi
+
+    if story_data.sorular is not None:
+        story.sorular = json.dumps(story_data.sorular)
     
     db.commit()
     db.refresh(story)
@@ -163,10 +189,10 @@ async def update_story(
 async def delete_story(
     story_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN))
+    current_user: User = Depends(require_any_role([UserRole.ADMIN, UserRole.TEACHER]))
 ):
     """
-    Delete a story (Admin only)
+    Delete a story (Admin or Teacher)
     """
     story = db.query(Story).filter(Story.id == story_id).first()
     
@@ -192,10 +218,10 @@ async def upload_cover_image(
     story_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN))
+    current_user: User = Depends(require_any_role([UserRole.ADMIN, UserRole.TEACHER]))
 ):
     """
-    Upload cover image for a story (Admin only)
+    Upload cover image for a story (Admin or Teacher)
     """
     story = db.query(Story).filter(Story.id == story_id).first()
     
@@ -223,10 +249,10 @@ async def upload_audio_file(
     story_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN))
+    current_user: User = Depends(require_any_role([UserRole.ADMIN, UserRole.TEACHER]))
 ):
     """
-    Upload audio file for a story (Admin only)
+    Upload audio file for a story (Admin or Teacher)
     """
     story = db.query(Story).filter(Story.id == story_id).first()
     

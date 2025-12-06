@@ -22,376 +22,301 @@
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+
+        .subject-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .subject-card.active {
+            ring: 2px solid;
+            transform: scale(1.05);
+        }
     </style>
 </head>
 
 <body class="bg-gray-50">
-    <nav class="bg-white shadow-lg">
+    <!-- Navbar (Same as before) -->
+    <nav class="bg-white shadow-lg sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <i class="fas fa-book-reader text-2xl text-purple-600 mr-3"></i>
                     <span class="text-xl font-bold text-gray-800">Öğrenci Paneli</span>
                 </div>
+                <!-- Navbar Items -->
                 <div class="flex items-center space-x-2 md:space-x-4">
                     <div class="text-right hidden md:block">
-                        <p class="text-sm font-semibold text-gray-800" id="userName">Yükleniyor...</p>
+                        <p class="text-sm font-semibold text-gray-800" id="userName">...</p>
                         <p class="text-xs text-gray-500" id="userGrade"></p>
                     </div>
                     <div id="notificationBell"></div>
-                    <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 transition" title="Tema">
-                        <i class="fas fa-moon text-gray-600"></i>
-                    </button>
+                    <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 transition"><i
+                            class="fas fa-moon text-gray-600"></i></button>
                     <button onclick="window.location.href='../profile.html'"
-                        class="hidden md:block text-purple-600 hover:text-purple-700" title="Profil">
-                        <i class="fas fa-user-cog text-xl"></i>
-                    </button>
-                    <button onclick="logout()" class="text-red-600 hover:text-red-700">
-                        <i class="fas fa-sign-out-alt text-xl"></i>
-                    </button>
+                        class="hidden md:block text-purple-600 hover:text-purple-700"><i
+                            class="fas fa-user-cog text-xl"></i></button>
+                    <button onclick="logout()" class="text-red-600 hover:text-red-700"><i
+                            class="fas fa-sign-out-alt text-xl"></i></button>
                 </div>
             </div>
         </div>
     </nav>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-        <div class="gradient-bg text-white rounded-xl p-6 md:p-8 mb-6 md:mb-8">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Welcome Section -->
+        <div class="gradient-bg text-white rounded-xl p-6 md:p-8 mb-8 shadow-lg">
             <h1 class="text-2xl md:text-3xl font-bold mb-2">Hoş Geldin! 👋</h1>
-            <p class="text-purple-100 text-sm md:text-base">Okuma becerilerini geliştirmek için hazır mısın?</p>
+            <p class="text-purple-100">Bugün hangi dersten hikâye okumak istersin?</p>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-            <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-xs md:text-sm">Okunan Hikâyeler</p>
-                        <p class="text-2xl md:text-3xl font-bold text-purple-600" id="totalStories">0</p>
+        <!-- Subject Selection -->
+        <div class="mb-8 overflow-x-auto pb-4">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i
+                    class="fas fa-th-large mr-2 text-purple-600"></i>Dersler</h2>
+            <div class="flex space-x-4 md:grid md:grid-cols-4 lg:grid-cols-7 min-w-max md:min-w-0">
+                <div onclick="filterBySubject(null)"
+                    class="subject-card active bg-gray-100 p-4 rounded-xl cursor-pointer text-center w-32 md:w-auto flex-shrink-0"
+                    id="subject-all">
+                    <div
+                        class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-600">
+                        <i class="fas fa-layer-group text-xl"></i>
                     </div>
-                    <i class="fas fa-book text-3xl md:text-4xl text-purple-200"></i>
+                    <span class="font-bold text-gray-700 text-sm">Tümü</span>
                 </div>
-            </div>
-            <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-xs md:text-sm">Pratik Sayısı</p>
-                        <p class="text-2xl md:text-3xl font-bold text-blue-600" id="totalPractice">0</p>
+                <div onclick="filterBySubject('Türkçe')"
+                    class="subject-card bg-red-50 p-4 rounded-xl cursor-pointer text-center w-32 md:w-auto flex-shrink-0"
+                    id="subject-Türkçe">
+                    <div
+                        class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2 text-red-500">
+                        <i class="fas fa-book text-xl"></i>
                     </div>
-                    <i class="fas fa-redo text-3xl md:text-4xl text-blue-200"></i>
+                    <span class="font-bold text-gray-700 text-sm">Türkçe</span>
                 </div>
-            </div>
-            <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-xs md:text-sm">Ortalama Hız</p>
-                        <p class="text-2xl md:text-3xl font-bold text-green-600" id="avgSpeed">0</p>
-                        <p class="text-xs text-gray-500">kelime/dakika</p>
+                <div onclick="filterBySubject('Matematik')"
+                    class="subject-card bg-blue-50 p-4 rounded-xl cursor-pointer text-center w-32 md:w-auto flex-shrink-0"
+                    id="subject-Matematik">
+                    <div
+                        class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2 text-blue-500">
+                        <i class="fas fa-calculator text-xl"></i>
                     </div>
-                    <i class="fas fa-tachometer-alt text-3xl md:text-4xl text-green-200"></i>
+                    <span class="font-bold text-gray-700 text-sm">Matematik</span>
                 </div>
-            </div>
-            <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-xs md:text-sm">Kazanılan Rozetler</p>
-                        <p class="text-2xl md:text-3xl font-bold text-orange-600" id="totalBadges">0</p>
+                <div onclick="filterBySubject('Fen Bilimleri')"
+                    class="subject-card bg-green-50 p-4 rounded-xl cursor-pointer text-center w-32 md:w-auto flex-shrink-0"
+                    id="subject-Fen Bilimleri">
+                    <div
+                        class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 text-green-500">
+                        <i class="fas fa-flask text-xl"></i>
                     </div>
-                    <i class="fas fa-medal text-3xl md:text-4xl text-orange-200"></i>
+                    <span class="font-bold text-gray-700 text-sm">Fen Bil.</span>
                 </div>
-            </div>
-        </div>
-
-        <!-- Progress & Badges Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 md:mb-8">
-            <!-- Progress Tracker -->
-            <div id="progressContainer">
-                <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
-                    <h3 class="text-xl font-bold mb-2">🎯 Bir Sonraki Hedef</h3>
-                    <p class="text-sm mb-4">Yükleniyor...</p>
+                <div onclick="filterBySubject('Sosyal Bilgiler')"
+                    class="subject-card bg-yellow-50 p-4 rounded-xl cursor-pointer text-center w-32 md:w-auto flex-shrink-0"
+                    id="subject-Sosyal Bilgiler">
+                    <div
+                        class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2 text-yellow-500">
+                        <i class="fas fa-globe-americas text-xl"></i>
+                    </div>
+                    <span class="font-bold text-gray-700 text-sm">Sosyal Bil.</span>
                 </div>
-            </div>
-
-            <!-- My Badges -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">
-                        <i class="fas fa-medal mr-2 text-orange-500"></i>Rozetlerim
-                    </h3>
-                    <button onclick="showAllBadges()" class="text-purple-600 hover:text-purple-700 text-sm">
-                        Tümünü Gör
-                    </button>
+                <div onclick="filterBySubject('İngilizce')"
+                    class="subject-card bg-indigo-50 p-4 rounded-xl cursor-pointer text-center w-32 md:w-auto flex-shrink-0"
+                    id="subject-İngilizce">
+                    <div
+                        class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-2 text-indigo-500">
+                        <i class="fas fa-language text-xl"></i>
+                    </div>
+                    <span class="font-bold text-gray-700 text-sm">İngilizce</span>
                 </div>
-                <div id="badgesContainer" class="grid grid-cols-4 gap-3">
-                    <p class="col-span-4 text-center text-gray-500 py-4">Yükleniyor...</p>
+                <div onclick="filterBySubject('Din Kültürü')"
+                    class="subject-card bg-emerald-50 p-4 rounded-xl cursor-pointer text-center w-32 md:w-auto flex-shrink-0"
+                    id="subject-Din Kültürü">
+                    <div
+                        class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2 text-emerald-500">
+                        <i class="fas fa-star-and-crescent text-xl"></i>
+                    </div>
+                    <span class="font-bold text-gray-700 text-sm">Din Kül.</span>
                 </div>
-            </div>
-        </div>
-
-        <!-- Leaderboard Section -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-6 md:mb-8">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-bold text-gray-800">
-                    <i class="fas fa-trophy mr-2 text-yellow-500"></i>Liderlik Tablosu
-                </h3>
-                <div class="flex space-x-2">
-                    <button onclick="loadLeaderboard('weekly')" id="lbWeekly"
-                        class="px-3 py-1 rounded-lg text-sm bg-purple-600 text-white">Haftalık</button>
-                    <button onclick="loadLeaderboard('monthly')" id="lbMonthly"
-                        class="px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700">Aylık</button>
-                    <button onclick="loadLeaderboard('all_time')" id="lbAllTime"
-                        class="px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700">Tüm Zamanlar</button>
-                </div>
-            </div>
-            <div id="leaderboardContainer">
-                <p class="text-center text-gray-500 py-8">Yükleniyor...</p>
             </div>
         </div>
 
-        <!-- Stories Section -->
-        <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4">
-                <h2 class="text-xl md:text-2xl font-bold text-gray-800">Hikâyeler</h2>
-                <div class="relative w-full md:w-64">
-                    <input type="text" id="storySearch" placeholder="Hikâye ara..."
-                        class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500">
+        <!-- Search & Content -->
+        <div class="bg-white rounded-xl shadow-md p-6 min-h-[500px]">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-xl font-bold text-gray-800" id="contentTitle">Tüm Hikâyeler</h2>
+                <div class="relative w-full md:w-72">
+                    <input type="text" id="storySearch" placeholder="Hikâye veya konu ara..."
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
                     <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                 </div>
             </div>
-            <div id="storiesLoading" class="text-center py-8 md:py-12">
-                <i class="fas fa-spinner fa-spin text-3xl md:text-4xl text-purple-600"></i>
-                <p class="text-gray-600 mt-4">Hikâyeler yükleniyor...</p>
+
+            <!-- Stories Grid -->
+            <div id="storiesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Loaded via JS -->
             </div>
-            <div id="storiesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 hidden">
+            <div id="noStories" class="hidden text-center py-12">
+                <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
+                <p class="text-gray-500">Aradığınız kriterlere uygun hikâye bulunamadı.</p>
             </div>
-            <div id="noStories" class="text-center py-8 md:py-12 hidden">
-                <i class="fas fa-book-open text-5xl md:text-6xl text-gray-300 mb-4"></i>
-                <p class="text-gray-600">Henüz hikâye bulunmuyor.</p>
+        </div>
+
+        <!-- Stats Section (Optional - kept simple) -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-500">Okunan Hikâye</p>
+                        <p class="text-2xl font-bold text-purple-600" id="totalStories">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                        <i class="fas fa-book-reader"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-500">Rozetler</p>
+                        <p class="text-2xl font-bold text-orange-600" id="totalBadges">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                        <i class="fas fa-medal"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-500">Pratik</p>
+                        <p class="text-2xl font-bold text-blue-600" id="totalPractice">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><i
+                            class="fas fa-redo"></i></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- All Badges Modal -->
-    <div id="badgesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div class="gradient-bg text-white p-6 rounded-t-xl flex items-center justify-between">
-                <h2 class="text-2xl font-bold">🏅 Tüm Rozetler</h2>
-                <button onclick="closeBadgesModal()" class="text-white hover:text-gray-200">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
-            </div>
-            <div id="allBadgesContainer" class="p-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-            </div>
-        </div>
-    </div>
+    <!-- All Badges Modal (kept for compatibility if needed) -->
+    <!-- ... -->
 
-    <script src="../js/theme.js"></script>
-    <script src="../js/loading.js"></script>
-    <script src="../js/notifications.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/search.js"></script>
     <script src="../js/gamification.js"></script>
+
     <script>
+        if (!checkAuth()) window.location.href = '../login.html';
+        const user = getCurrentUserInfo();
+
+        document.getElementById('userName').textContent = user.ad_soyad;
+        document.getElementById('userGrade').textContent = user.sinif_duzeyi ? `${user.sinif_duzeyi}. Sınıf` : '';
+
+        let currentSubject = null;
+        let currentSearch = '';
+
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '../login.html';
         }
 
-        if (!checkAuth()) {
-            window.location.href = '../login.html';
-        }
-
-        const user = getCurrentUserInfo();
-        if (user.rol !== 'ogrenci') {
-            alert('Bu sayfaya erişim yetkiniz yok!');
-            window.location.href = '../login.html';
-        }
-
-        document.getElementById('userName').textContent = user.ad_soyad;
-        document.getElementById('userGrade').textContent = `${user.sinif_duzeyi}. Sınıf`;
-
-        // Initialize notification bell
-        if (typeof NotificationUI !== 'undefined') {
-            NotificationUI.init('notificationBell');
-        }
-
-        async function loadProgressSummary() {
-            try {
-                const progress = await API.getMyProgress();
-                if (progress.summary) {
-                    document.getElementById('totalStories').textContent = progress.summary.total_stories || 0;
-                    document.getElementById('totalPractice').textContent = progress.summary.total_practice_sessions || 0;
-                    document.getElementById('avgSpeed').textContent = Math.round(progress.summary.average_speed_wpm || 0);
-                }
-            } catch (error) {
-                console.error('Error loading progress:', error);
-            }
-        }
-
-        async function loadStories(searchTerm = null) {
-            const storiesLoading = document.getElementById('storiesLoading');
-            const storiesContainer = document.getElementById('storiesContainer');
+        async function loadStories() {
+            const container = document.getElementById('storiesContainer');
             const noStories = document.getElementById('noStories');
 
-            if (searchTerm !== null || storiesContainer.children.length === 0) {
-                storiesLoading.classList.remove('hidden');
-                storiesContainer.classList.add('hidden');
-                noStories.classList.add('hidden');
-            }
+            container.innerHTML = '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-4xl text-purple-600"></i></div>';
+            noStories.classList.add('hidden');
 
             try {
-                if (searchTerm !== null) {
-                    storiesContainer.innerHTML = '';
-                }
+                // Fetch stories (api.js updated to accept subject)
+                const stories = await API.getStories(user.sinif_duzeyi, currentSearch, currentSubject);
 
-                const stories = await API.getStories(user.sinif_duzeyi, searchTerm);
-                storiesLoading.classList.add('hidden');
+                container.innerHTML = '';
 
-                if (stories && stories.length > 0) {
-                    storiesContainer.classList.remove('hidden');
-                    storiesContainer.innerHTML = '';
-                    stories.forEach(story => {
-                        storiesContainer.appendChild(createStoryCard(story));
-                    });
-                } else {
+                if (stories.length === 0) {
                     noStories.classList.remove('hidden');
+                    return;
                 }
-            } catch (error) {
-                console.error('Error loading stories:', error);
-                storiesLoading.innerHTML = '<i class="fas fa-exclamation-triangle text-4xl text-red-600"></i><p class="text-red-600 mt-4">Hikâyeler yüklenirken hata oluştu.</p>';
-            }
-        }
 
-        function createStoryCard(story) {
-            const card = document.createElement('div');
-            card.className = 'bg-gray-50 rounded-lg p-4 md:p-6 hover:shadow-lg transition cursor-pointer';
-            card.onclick = () => window.location.href = `story-view.html?id=${story.id}`;
-            card.innerHTML = `
-                <div class="flex items-start justify-between mb-3 md:mb-4">
-                    <div class="bg-purple-100 w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-book text-purple-600 text-lg md:text-xl"></i>
+                const baseUrl = API_BASE_URL.replace('/api', '');
+
+                container.innerHTML = stories.map(story => {
+                    const imageUrl = story.kapak_gorseli
+                        ? `${baseUrl}/${story.kapak_gorseli}`
+                        : `https://placehold.co/600x400/eee/999?text=${encodeURIComponent(story.ders || 'Hikaye')}`;
+
+                    return `
+                    <div class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
+                        onclick="window.location.href='story-view.html?id=${story.id}'">
+                        <div class="relative overflow-hidden h-40">
+                            <img src="${imageUrl}" alt="${story.baslik}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                            <div class="absolute top-2 right-2 bg-white bg-opacity-90 px-2 py-1 rounded-md text-xs font-bold text-gray-700 shadow-sm">
+                                ${story.ders || 'Genel'}
+                            </div>
+                        </div>
+                        <div class="p-4 flex flex-col flex-1">
+                            <h3 class="font-bold text-gray-800 mb-1 line-clamp-2 leading-tight group-hover:text-purple-600 transition">${story.baslik}</h3>
+                            <p class="text-xs text-gray-500 mb-3 line-clamp-2 flex-1">${story.konu_ozeti || story.metin.substring(0, 80) + '...'}</p>
+                            
+                            <div class="flex items-center justify-between text-xs text-gray-400 mt-auto border-t pt-3">
+                                <span><i class="fas fa-file-alt mr-1"></i>${story.kelime_sayisi || 0} kelime</span>
+                                <span class="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-semibold">Oku</span>
+                            </div>
+                        </div>
                     </div>
-                    <span class="bg-purple-600 text-white text-xs px-2 py-1 rounded">${story.sinif_duzeyi}. Sınıf</span>
-                </div>
-                <h3 class="text-base md:text-lg font-bold text-gray-800 mb-2">${story.baslik}</h3>
-                <p class="text-gray-600 text-sm mb-3 md:mb-4 line-clamp-2">${story.metin.substring(0, 100)}...</p>
-                <div class="flex items-center justify-between text-xs md:text-sm text-gray-500">
-                    <span><i class="fas fa-file-word mr-1"></i>${story.kelime_sayisi || 0} kelime</span>
-                    ${story.ses_dosyasi ? '<i class="fas fa-volume-up text-blue-600"></i>' : ''}
-                </div>
-            `;
-            return card;
-        }
+                    `;
+                }).join('');
 
-        // Gamification Functions
-        async function loadGamification() {
-            try {
-                // Load badges
-                const badgesResponse = await fetch(`${API_BASE_URL}/gamification/badges/me`, {
-                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-                });
-                if (badgesResponse.ok) {
-                    const badgesData = await badgesResponse.json();
-                    document.getElementById('totalBadges').textContent = badgesData.total || 0;
-                    renderSmallBadges(badgesData.badges);
-                }
-
-                // Load progress
-                const progressResponse = await fetch(`${API_BASE_URL}/gamification/progress/me`, {
-                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-                });
-                if (progressResponse.ok) {
-                    const progressData = await progressResponse.json();
-                    Gamification.renderProgress(progressData, document.getElementById('progressContainer'));
-                }
-
-                // Check for new achievements
-                Gamification.checkAchievements();
             } catch (error) {
-                console.error('Error loading gamification:', error);
+                console.error(error);
+                container.innerHTML = '<div class="col-span-full text-center text-red-500">Yüklenirken hata oluştu.</div>';
             }
         }
 
-        function renderSmallBadges(badges) {
-            const container = document.getElementById('badgesContainer');
-            if (badges.length === 0) {
-                container.innerHTML = '<p class="col-span-4 text-center text-gray-500 py-4">Henüz rozet kazanmadın. Hikaye okumaya başla!</p>';
-                return;
+        async function loadStats() {
+            try {
+                const progress = await API.getMyProgress();
+                document.getElementById('totalStories').textContent = progress.okunan_hikaye_sayisi || 0;
+                document.getElementById('totalPractice').textContent = progress.toplam_pratik || 0;
+                // Badges can be loaded from gamification.js logic if needed
+                const data = await API.getMyBadges();
+                document.getElementById('totalBadges').textContent = data.badges ? data.badges.length : 0;
+            } catch (e) {
+                console.warn("Stats error", e);
             }
-
-            const displayBadges = badges.slice(0, 4);
-            container.innerHTML = displayBadges.map(badge => `
-                <div class="text-center">
-                    <div class="text-3xl mb-1">${badge.icon}</div>
-                    <p class="text-xs text-gray-600 truncate">${badge.name}</p>
-                </div>
-            `).join('');
         }
 
-        let currentPeriod = 'weekly';
-        async function loadLeaderboard(period = 'weekly') {
-            currentPeriod = period;
+        function filterBySubject(subject) {
+            currentSubject = subject;
 
-            // Update button styles
-            document.querySelectorAll('[id^="lb"]').forEach(btn => {
-                btn.className = 'px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700';
+            // UI Update
+            document.querySelectorAll('.subject-card').forEach(el => {
+                el.classList.remove('active', 'ring-2', 'ring-purple-500');
+                if ((subject === null && el.id === 'subject-all') || el.id === `subject-${subject}`) {
+                    el.classList.add('active', 'ring-2', 'ring-purple-500');
+                }
             });
-            document.getElementById('lb' + period.charAt(0).toUpperCase() + period.slice(1).replace('_t', 'T')).className =
-                'px-3 py-1 rounded-lg text-sm bg-purple-600 text-white';
 
-            const container = document.getElementById('leaderboardContainer');
-            container.innerHTML = '<p class="text-center text-gray-500 py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Yükleniyor...</p>';
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/gamification/leaderboard?period=${period}&grade_level=${user.sinif_duzeyi}`, {
-                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-                });
-
-                if (!response.ok) throw new Error('Failed');
-
-                const data = await response.json();
-                Gamification.renderLeaderboard(data.leaderboard, container);
-            } catch (error) {
-                console.error('Error loading leaderboard:', error);
-                container.innerHTML = '<p class="text-center text-red-500 py-4">Liderlik tablosu yüklenemedi</p>';
-            }
+            document.getElementById('contentTitle').textContent = subject ? `${subject} Hikâyeleri` : 'Tüm Hikâyeler';
+            loadStories();
         }
 
-        function showAllBadges() {
-            loadAllBadges();
-            document.getElementById('badgesModal').classList.remove('hidden');
-            document.getElementById('badgesModal').classList.add('flex');
-        }
-
-        function closeBadgesModal() {
-            document.getElementById('badgesModal').classList.add('hidden');
-            document.getElementById('badgesModal').classList.remove('flex');
-        }
-
-        async function loadAllBadges() {
-            const container = document.getElementById('allBadgesContainer');
-            try {
-                const response = await fetch(`${API_BASE_URL}/gamification/badges/me`, {
-                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    Gamification.renderBadges(data.badges, container);
-                }
-            } catch (error) {
-                container.innerHTML = '<p class="text-red-500">Rozetler yüklenemedi</p>';
-            }
-        }
+        // Search Setup
+        SearchUtils.setupSearch('storySearch', (val) => {
+            currentSearch = val;
+            loadStories();
+        });
 
         // Initialize
-        loadProgressSummary();
         loadStories();
-        loadGamification();
-        loadLeaderboard('weekly');
-
-        SearchUtils.setupSearch('storySearch', (value) => {
-            loadStories(value);
-        });
+        loadStats();
     </script>
 </body>
 

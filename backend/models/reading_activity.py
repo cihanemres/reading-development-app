@@ -48,6 +48,7 @@ class Answer(Base):
     q4 = Column(String(10), nullable=True)
     dogru_sayisi = Column(Integer, nullable=True)  # Number of correct answers
     acik_uclu = Column(Text, nullable=True)  # Open-ended answer
+    answers_json = Column(Text, nullable=True)  # JSON string for flexible answers
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     def __repr__(self):

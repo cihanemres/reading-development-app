@@ -30,7 +30,8 @@ async function apiRequest(endpoint, options = {}) {
 
     const defaultOptions = {
         headers: {
-            'Content-Type': 'application/json',
+            // Only add Content-Type if NOT FormData (browser sets it automatically for FormData)
+            ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
             ...(token && { 'Authorization': `Bearer ${token}` })
         }
     };
@@ -82,12 +83,13 @@ const API = {
     },
 
     // Stories
-    async getStories(gradeLevel = null, search = null) {
-        let url = '/stories';
+    async getStories(gradeLevel = null, search = null, subject = null) {
+        let url = '/stories?';
         const params = new URLSearchParams();
 
         if (gradeLevel) params.append('sinif_duzeyi', gradeLevel);
         if (search) params.append('search', search);
+        if (subject) params.append('ders', subject);
 
         if (params.toString()) url += `?${params.toString()}`;
 
@@ -295,6 +297,11 @@ const API = {
             },
             body: formData
         });
+        return response.json();
+    },
+
+    async getMyBadges() {
+        const response = await apiRequest('/gamification/badges/me');
         return response.json();
     }
 };

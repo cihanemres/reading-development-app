@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hikâye Yönetimi</title>
+    <title>Hikâye ve İçerik Yönetimi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -17,21 +17,39 @@
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     </style>
 </head>
 
 <body class="bg-gray-50">
-    <nav class="bg-white shadow-lg">
+    <nav class="bg-white shadow-lg sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <a href="dashboard.html" class="text-purple-600 hover:text-purple-700 mr-4">
+                    <a href="../teacher/dashboard.html" class="text-purple-600 hover:text-purple-700 mr-4">
                         <i class="fas fa-arrow-left text-xl"></i>
                     </a>
-                    <span class="text-xl font-bold text-gray-800">Hikâye Yönetimi</span>
+                    <span class="text-xl font-bold text-gray-800">İçerik Yönetimi</span>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <p class="text-sm font-semibold text-gray-800" id="userName">Yükleniyor...</p>
+                    <p class="text-sm font-semibold text-gray-800" id="userName">...</p>
                     <button onclick="performLogout()" class="text-red-600 hover:text-red-700">
                         <i class="fas fa-sign-out-alt text-xl"></i>
                     </button>
@@ -41,202 +59,313 @@
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 py-8">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Hikâye Yönetimi</h1>
-            <button onclick="showAddModal()" class="gradient-bg text-white px-6 py-3 rounded-lg hover:opacity-90">
-                <i class="fas fa-plus mr-2"></i>Yeni Hikâye
+        <!-- Header & Action -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Ders ve Hikâye İçerikleri</h1>
+                <p class="text-gray-600">Öğrencileriniz için okuma parçaları ve sorular ekleyin.</p>
+            </div>
+            <button onclick="showAddModal()"
+                class="gradient-bg text-white px-6 py-3 rounded-lg hover:opacity-90 shadow-lg transform hover:-translate-y-1 transition">
+                <i class="fas fa-plus mr-2"></i>Yeni İçerik Ekle
             </button>
         </div>
 
-        <div class="bg-white rounded-xl shadow-md p-4 mb-6">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="flex items-center space-x-2 md:space-x-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-                    <label class="font-semibold whitespace-nowrap">Sınıf:</label>
-                    <button onclick="filterStories(null)"
-                        class="filter-btn px-4 py-2 rounded-lg bg-purple-600 text-white whitespace-nowrap">Tümü</button>
-                    <button onclick="filterStories(2)"
-                        class="filter-btn px-4 py-2 rounded-lg bg-gray-200 whitespace-nowrap">2. Sınıf</button>
-                    <button onclick="filterStories(3)"
-                        class="filter-btn px-4 py-2 rounded-lg bg-gray-200 whitespace-nowrap">3. Sınıf</button>
-                    <button onclick="filterStories(4)"
-                        class="filter-btn px-4 py-2 rounded-lg bg-gray-200 whitespace-nowrap">4. Sınıf</button>
-                </div>
-                <div class="relative w-full md:w-64 mt-4 md:mt-0">
-                    <input type="text" id="storySearch" placeholder="Hikâye ara..."
-                        class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-purple-500">
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                </div>
-            </div>
-        </div>
-
-        <div id="storiesContainer" class="space-y-4">
-            <div class="text-center py-12">
-                <i class="fas fa-spinner fa-spin text-4xl text-purple-600"></i>
-                <p class="mt-4">Yükleniyor...</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="storyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-xl max-w-3xl w-full mx-4">
-            <div class="gradient-bg text-white p-6 rounded-t-xl">
-                <h2 class="text-2xl font-bold" id="modalTitle">Yeni Hikâye</h2>
-            </div>
-            <form id="storyForm" class="p-6 space-y-4">
-                <input type="hidden" id="storyId">
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Subject Filter -->
                 <div>
-                    <label class="block font-semibold mb-2">Başlık</label>
-                    <input type="text" id="title" required class="w-full border-2 rounded-lg p-3">
-                </div>
-                <div>
-                    <label class="block font-semibold mb-2">Sınıf</label>
-                    <select id="gradeLevel" required class="w-full border-2 rounded-lg p-3">
-                        <option value="">Seçiniz</option>
-                        <option value="2">2. Sınıf</option>
-                        <option value="3">3. Sınıf</option>
-                        <option value="4">4. Sınıf</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ders</label>
+                    <select id="filterSubject" onchange="applyFilters()"
+                        class="w-full border-gray-300 rounded-lg p-2 border focus:border-purple-500 focus:outline-none">
+                        <option value="">Tümü</option>
+                        <option value="Türkçe">Türkçe</option>
+                        <option value="Matematik">Matematik</option>
+                        <option value="Fen Bilimleri">Fen Bilimleri</option>
+                        <option value="Sosyal Bilgiler">Sosyal Bilgiler</option>
+                        <option value="Hayat Bilgisi">Hayat Bilgisi</option>
+                        <option value="Din Kültürü">Din Kültürü</option>
+                        <option value="İngilizce">İngilizce</option>
                     </select>
                 </div>
+
+                <!-- Grade Filter -->
                 <div>
-                    <label class="block font-semibold mb-2">Metin</label>
-                    <textarea id="content" rows="8" required class="w-full border-2 rounded-lg p-3"></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sınıf Seviyesi</label>
+                    <select id="filterGrade" onchange="applyFilters()"
+                        class="w-full border-gray-300 rounded-lg p-2 border focus:border-purple-500 focus:outline-none">
+                        <option value="">Tümü</option>
+                        <!-- Updated by JS -->
+                    </select>
                 </div>
-                <div class="flex justify-end space-x-4">
-                    <button type="button" onclick="closeModal()" class="px-6 py-3 bg-gray-300 rounded-lg">İptal</button>
-                    <button type="submit" class="px-6 py-3 gradient-bg text-white rounded-lg">Kaydet</button>
+
+                <!-- Search -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Arama</label>
+                    <div class="relative">
+                        <input type="text" id="storySearch" placeholder="Başlık ara..."
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
                 </div>
-            </form>
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div id="storiesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Loaded via JS -->
         </div>
     </div>
 
-    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-xl max-w-md w-full mx-4 p-6">
-            <h3 class="text-xl font-bold mb-4">Hikâyeyi Sil</h3>
-            <p class="mb-6">Silmek istediğinizden emin misiniz?</p>
-            <div class="flex justify-end space-x-4">
-                <button onclick="closeDeleteModal()" class="px-6 py-3 bg-gray-300 rounded-lg">İptal</button>
-                <button onclick="confirmDelete()" class="px-6 py-3 bg-red-600 text-white rounded-lg">Sil</button>
+    <!-- Add/Edit Modal -->
+    <div id="storyModal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 overflow-y-auto py-10">
+        <div class="bg-white rounded-xl w-full max-w-4xl mx-4 my-auto shadow-2xl flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="gradient-bg text-white p-6 rounded-t-xl flex justify-between items-center flex-shrink-0">
+                <h2 class="text-2xl font-bold" id="modalTitle">Yeni İçerik</h2>
+                <button onclick="closeModal()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <!-- Data Model for Form -->
+                <form id="storyForm" class="space-y-6">
+                    <input type="hidden" id="storyId">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Left Column -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block font-semibold mb-1">Ders <span class="text-red-500">*</span></label>
+                                <select id="inputSubject" required
+                                    class="w-full border border-gray-300 rounded-lg p-2.5 focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+                                    <option value="Türkçe">Türkçe</option>
+                                    <option value="Matematik">Matematik</option>
+                                    <option value="Fen Bilimleri">Fen Bilimleri</option>
+                                    <option value="Sosyal Bilgiler">Sosyal Bilgiler</option>
+                                    <option value="Hayat Bilgisi">Hayat Bilgisi</option>
+                                    <option value="Din Kültürü">Din Kültürü</option>
+                                    <option value="İngilizce">İngilizce</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold mb-1">Başlık <span
+                                        class="text-red-500">*</span></label>
+                                <input type="text" id="inputTitle" required
+                                    class="w-full border border-gray-300 rounded-lg p-2.5 focus:border-purple-500">
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold mb-1">Sınıf Seviyesi <span
+                                        class="text-red-500">*</span></label>
+                                <select id="inputGrade" required
+                                    class="w-full border border-gray-300 rounded-lg p-2.5 focus:border-purple-500">
+                                    <!-- Populated via JS -->
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold mb-1">Kısa Özet / Konu</label>
+                                <textarea id="inputSummary" rows="3"
+                                    class="w-full border border-gray-300 rounded-lg p-2.5 focus:border-purple-500"
+                                    placeholder="İçeriğin konusu hakkında kısa bilgi..."></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block font-semibold mb-1">Kapak Görseli</label>
+                                <input type="file" id="inputCover" accept="image/*"
+                                    class="w-full border border-gray-300 rounded-lg p-2.5 focus:border-purple-500">
+                                <p class="text-xs text-gray-500 mt-1">Seçilmezse varsayılan görsel kullanılır.</p>
+                            </div>
+                        </div>
+
+                        <!-- Right Column (Text Content) -->
+                        <div class="h-full">
+                            <label class="block font-semibold mb-1">Okuma Metni <span
+                                    class="text-red-500">*</span></label>
+                            <textarea id="inputContent" required rows="12"
+                                class="w-full h-full border border-gray-300 rounded-lg p-3 focus:border-purple-500 font-medium"
+                                placeholder="Metin içeriğini buraya yapıştırın..."></textarea>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-200">
+
+                    <!-- Questions Section -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-800"><i
+                                    class="fas fa-question-circle text-purple-600 mr-2"></i>Sorular</h3>
+                            <button type="button" onclick="addQuestionField()"
+                                class="text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition">
+                                <i class="fas fa-plus mr-1"></i>Soru Ekle
+                            </button>
+                        </div>
+
+                        <div id="questionsList" class="space-y-4">
+                            <!-- Questions will be added here dynamically -->
+                            <div class="text-center text-gray-500 py-4 bg-gray-50 rounded-lg border border-dashed border-gray-300"
+                                id="noQuestionsMsg">
+                                Henüz soru eklenmedi.
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-4 flex-shrink-0 bg-gray-50 rounded-b-xl">
+                <button type="button" onclick="closeModal()"
+                    class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">İptal</button>
+                <button type="button" onclick="saveStory()"
+                    class="px-6 py-2.5 gradient-bg text-white rounded-lg hover:opacity-90 font-medium shadow-md">
+                    <i class="fas fa-save mr-2"></i>Kaydet
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- Question Template (Hidden) -->
+    <template id="questionTemplate">
+        <div class="question-item bg-gray-50 p-4 rounded-xl border border-gray-200 relative group">
+            <button type="button" onclick="removeQuestion(this)"
+                class="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition">
+                <i class="fas fa-trash"></i>
+            </button>
+            <div class="mb-3">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Soru Metni</label>
+                <input type="text" class="q-text w-full border border-gray-300 rounded-md p-2 focus:border-purple-500"
+                    placeholder="Soruyu yazınız...">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cevap Tipi</label>
+                    <select class="q-type w-full border border-gray-300 rounded-md p-2 text-sm"
+                        onchange="toggleQuestionType(this)">
+                        <option value="text">Açık Uçlu (Metin)</option>
+                        <option value="test">Çoktan Seçmeli (Test)</option>
+                    </select>
+                </div>
+                <div class="q-options-container hidden">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Seçenekler (A, B, C, D)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" class="q-opt-a w-full border border-gray-300 rounded p-1 text-sm"
+                            placeholder="A)">
+                        <input type="text" class="q-opt-b w-full border border-gray-300 rounded p-1 text-sm"
+                            placeholder="B)">
+                        <input type="text" class="q-opt-c w-full border border-gray-300 rounded p-1 text-sm"
+                            placeholder="C)">
+                        <input type="text" class="q-opt-d w-full border border-gray-300 rounded p-1 text-sm"
+                            placeholder="D)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
 
     <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/search.js"></script>
     <script>
+        // Init
         if (!checkAuth()) window.location.href = '../login.html';
         const user = getCurrentUserInfo();
-        if (user.rol !== 'yonetici' && user.rol !== 'ogretmen') {
-            alert('Erişim yetkiniz yok!');
-            window.location.href = '../login.html';
-        }
         document.getElementById('userName').textContent = user.ad_soyad;
 
-        let currentGrade = null;
-        let storyToDelete = null;
-
-        async function loadStories(searchTerm = null) {
-            const container = document.getElementById('storiesContainer');
-
-            if (searchTerm !== null || !container.children.length) {
-                container.innerHTML = `
-                    <div class="text-center py-12">
-                        <i class="fas fa-spinner fa-spin text-4xl text-purple-600"></i>
-                        <p class="mt-4">Yükleniyor...</p>
-                    </div>
-                `;
+        // Populate Grade Selects (1-12)
+        const gradeSelects = [document.getElementById('filterGrade'), document.getElementById('inputGrade')];
+        gradeSelects.forEach(select => {
+            for (let i = 1; i <= 12; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `${i}. Sınıf`;
+                select.appendChild(opt);
             }
+        });
+
+        // State
+        let currentSubject = '';
+        let currentGrade = '';
+        let currentSearch = '';
+
+        // Load Initial Data
+        loadStories();
+
+        async function loadStories() {
+            const container = document.getElementById('storiesContainer');
+            container.innerHTML = '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-4xl text-purple-600"></i></div>';
 
             try {
-                const stories = await API.getStories(currentGrade, searchTerm);
+                // api.js getStories update edilmisti: (grade, search, subject)
+                const stories = await API.getStories(currentGrade || null, currentSearch || null, currentSubject || null);
 
-                if (stories.length === 0) {
+                if (!stories || stories.length === 0) {
                     container.innerHTML = `
-                        <div class="text-center py-12 bg-gray-50 rounded-lg">
-                            <i class="fas fa-book-open text-4xl text-gray-300 mb-4"></i>
-                            <p class="text-gray-600">Hikâye bulunamadı.</p>
+                        <div class="col-span-full text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
+                            <i class="fas fa-folder-open text-4xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">Kriterlere uygun içerik bulunamadı.</p>
                         </div>
                     `;
                     return;
                 }
 
                 container.innerHTML = stories.map(story => `
-                    <div class="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between hover:shadow-md transition">
-                        <div class="flex items-center space-x-4">
-                            <div class="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-book text-purple-600 text-xl"></i>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition border border-gray-100 flex flex-col">
+                        <div class="h-2 bg-${getSubjectColor(story.ders)}"></div>
+                        <div class="p-5 flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500">${story.ders || 'Genel'}</span>
+                                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">${story.sinif_duzeyi}. Sınıf</span>
                             </div>
-                            <div>
-                                <h3 class="font-bold text-gray-800">${story.baslik}</h3>
-                                <div class="flex space-x-3 text-sm text-gray-500">
-                                    <span>${story.sinif_duzeyi}. Sınıf</span>
-                                    <span>${story.kelime_sayisi || 0} kelime</span>
-                                </div>
+                            <h3 class="font-bold text-lg text-gray-800 mb-2 line-clamp-2">${story.baslik}</h3>
+                            <p class="text-gray-500 text-sm line-clamp-3 mb-4">${story.konu_ozeti || story.metin.substring(0, 100) + '...'}</p>
+                            
+                            <div class="flex items-center text-xs text-gray-400 space-x-3">
+                                <span><i class="fas fa-file-alt mr-1"></i>${story.kelime_sayisi || 0} kelime</span>
+                                ${story.sorular ? `<span><i class="fas fa-question-circle mr-1"></i>Soru var</span>` : ''}
                             </div>
                         </div>
-                        <div class="flex space-x-2">
-                            <button onclick="window.location.href='../student/story-view.html?id=${story.id}'" 
-                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Görüntüle">
-                                <i class="fas fa-eye"></i>
+                        <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-between items-center">
+                             <button onclick="editStory(${story.id})" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                <i class="fas fa-edit mr-1"></i>Düzenle
                             </button>
-                            <button onclick="editStory(${story.id})" 
-                                class="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Düzenle">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="window.location.href='../student/quiz.html?id=${story.id}'"
-                                class="p-2 text-purple-600 hover:bg-purple-50 rounded-lg" title="Sınavı Gör">
-                                <i class="fas fa-question-circle"></i>
-                            </button>
-                            <button onclick="deleteStory(${story.id})" 
-                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Sil">
-                                <i class="fas fa-trash"></i>
+                             <button onclick="deleteStory(${story.id})" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                <i class="fas fa-trash-alt mr-1"></i>Sil
                             </button>
                         </div>
                     </div>
                 `).join('');
+
             } catch (error) {
                 console.error(error);
-                container.innerHTML = '<p class="text-red-500 text-center">Yüklenirken hata oluştu</p>';
+                container.innerHTML = '<div class="col-span-full text-center text-red-500">Hata oluştu.</div>';
             }
         }
 
-        function filterStories(grade) {
-            currentGrade = grade;
-
-            // Update buttons
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('bg-purple-600', 'text-white');
-                btn.classList.add('bg-gray-200');
-            });
-            event.target.classList.remove('bg-gray-200');
-            event.target.classList.add('bg-purple-600', 'text-white');
-
-            const searchTerm = document.getElementById('storySearch').value;
-            loadStories(searchTerm);
+        function applyFilters() {
+            currentSubject = document.getElementById('filterSubject').value;
+            currentGrade = document.getElementById('filterGrade').value;
+            loadStories();
         }
 
+        SearchUtils.setupSearch('storySearch', (val) => {
+            currentSearch = val;
+            loadStories();
+        });
+
+        // Modal Functions
         function showAddModal() {
-            document.getElementById('modalTitle').textContent = 'Yeni Hikâye';
+            document.getElementById('modalTitle').textContent = 'Yeni İçerik';
             document.getElementById('storyForm').reset();
             document.getElementById('storyId').value = '';
+            document.getElementById('questionsList').innerHTML = document.getElementById('noQuestionsMsg').outerHTML;
             document.getElementById('storyModal').classList.remove('hidden');
             document.getElementById('storyModal').classList.add('flex');
-        }
-
-        async function editStory(id) {
-            try {
-                const story = await API.getStory(id);
-                document.getElementById('modalTitle').textContent = 'Düzenle';
-                document.getElementById('storyId').value = story.id;
-                document.getElementById('title').value = story.baslik;
-                document.getElementById('gradeLevel').value = story.sinif_duzeyi;
-                document.getElementById('content').value = story.metin;
-                document.getElementById('storyModal').classList.remove('hidden');
-                document.getElementById('storyModal').classList.add('flex');
-            } catch (error) {
-                console.error(error);
-                alert('Hikâye yüklenirken hata oluştu');
-            }
         }
 
         function closeModal() {
@@ -244,65 +373,165 @@
             document.getElementById('storyModal').classList.remove('flex');
         }
 
-        function deleteStory(id) {
-            showDeleteModal(id);
-        }
-
-        function showDeleteModal(id) {
-            storyToDelete = id;
-            document.getElementById('deleteModal').classList.remove('hidden');
-            document.getElementById('deleteModal').classList.add('flex');
-        }
-
-        function closeDeleteModal() {
-            storyToDelete = null;
-            document.getElementById('deleteModal').classList.add('hidden');
-            document.getElementById('deleteModal').classList.remove('flex');
-        }
-
-        async function confirmDelete() {
-            if (!storyToDelete) return;
+        async function editStory(id) {
             try {
-                await API.deleteStory(storyToDelete);
-                alert('Silindi!');
-                closeDeleteModal();
-                loadStories();
-            } catch (error) {
-                console.error(error);
-                alert('Hata!');
+                const story = await API.getStory(id);
+                document.getElementById('modalTitle').textContent = 'İçerik Düzenle';
+                document.getElementById('storyId').value = story.id;
+                document.getElementById('inputTitle').value = story.baslik;
+                document.getElementById('inputSubject').value = story.ders || 'Türkçe';
+                document.getElementById('inputGrade').value = story.sinif_duzeyi;
+                document.getElementById('inputContent').value = story.metin;
+                document.getElementById('inputSummary').value = story.konu_ozeti || '';
+
+                // Load Questions
+                const qList = document.getElementById('questionsList');
+                qList.innerHTML = '';
+
+                let questions = [];
+                try {
+                    questions = story.sorular ? JSON.parse(story.sorular) : [];
+                } catch (e) { questions = []; }
+
+                if (questions.length > 0) {
+                    questions.forEach(q => addQuestionField(q));
+                } else {
+                    qList.innerHTML = document.getElementById('noQuestionsMsg').outerHTML;
+                }
+
+                // Reset file input
+                document.getElementById('inputCover').value = '';
+
+                document.getElementById('storyModal').classList.remove('hidden');
+                document.getElementById('storyModal').classList.add('flex');
+            } catch (e) {
+                console.error(e);
+                alert('Yüklenemedi');
             }
         }
 
-        document.getElementById('storyForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const storyId = document.getElementById('storyId').value;
+        async function saveStory() {
+            const id = document.getElementById('storyId').value;
+
+            // Gather Questions
+            const qElements = document.querySelectorAll('.question-item');
+            const questions = [];
+            qElements.forEach(el => {
+                const text = el.querySelector('.q-text').value;
+                if (!text) return; // Skip empty questions
+
+                const type = el.querySelector('.q-type').value;
+                const qObj = { soru_metni: text, cevap_tipi: type };
+
+                if (type === 'test') {
+                    qObj.secenekler = {
+                        A: el.querySelector('.q-opt-a').value,
+                        B: el.querySelector('.q-opt-b').value,
+                        C: el.querySelector('.q-opt-c').value,
+                        D: el.querySelector('.q-opt-d').value
+                    };
+                }
+                questions.push(qObj);
+            });
+
             const data = {
-                baslik: document.getElementById('title').value,
-                sinif_duzeyi: parseInt(document.getElementById('gradeLevel').value),
-                metin: document.getElementById('content').value
+                baslik: document.getElementById('inputTitle').value,
+                ders: document.getElementById('inputSubject').value,
+                sinif_duzeyi: parseInt(document.getElementById('inputGrade').value),
+                metin: document.getElementById('inputContent').value,
+                konu_ozeti: document.getElementById('inputSummary').value,
+                sorular: questions
             };
 
+            if (!data.baslik || !data.metin) {
+                alert('Başlık ve Metin zorunludur.');
+                return;
+            }
+
             try {
-                if (storyId) {
-                    await API.updateStory(storyId, data);
+                let savedStory;
+                if (id) {
+                    savedStory = await API.updateStory(id, data);
                 } else {
-                    await API.createStory(data);
+                    savedStory = await API.createStory(data);
                 }
-                alert('Kaydedildi!');
+
+                // Upload Cover if selected
+                const coverFile = document.getElementById('inputCover').files[0];
+                if (coverFile && savedStory && savedStory.id) {
+                    await API.uploadCover(savedStory.id, coverFile);
+                }
+
+                alert('Başarıyla kaydedildi!');
                 closeModal();
                 loadStories();
-            } catch (error) {
-                console.error(error);
-                alert('Hata!');
+            } catch (e) {
+                console.error(e);
+                alert('Kaydetme hatası!');
             }
-        });
+        }
 
-        // Initialize search
-        SearchUtils.setupSearch('storySearch', (value) => {
-            loadStories(value);
-        });
+        // Delete Logic
+        async function deleteStory(id) {
+            if (confirm('Bu içeriği silmek istediğinize emin misiniz?')) {
+                try {
+                    await API.deleteStory(id);
+                    loadStories();
+                } catch (e) {
+                    alert('Silinemedi');
+                }
+            }
+        }
 
-        loadStories();
+        // Question UI Logic
+        function addQuestionField(existingData = null) {
+            const noMsg = document.getElementById('noQuestionsMsg');
+            if (noMsg) noMsg.remove();
+
+            const template = document.getElementById('questionTemplate');
+            const clone = template.content.cloneNode(true);
+            const container = document.getElementById('questionsList');
+
+            if (existingData) {
+                clone.querySelector('.q-text').value = existingData.soru_metni || '';
+                const typeSelect = clone.querySelector('.q-type');
+                typeSelect.value = existingData.cevap_tipi || 'text';
+
+                if (existingData.cevap_tipi === 'test' && existingData.secenekler) {
+                    clone.querySelector('.q-opt-a').value = existingData.secenekler.A || '';
+                    clone.querySelector('.q-opt-b').value = existingData.secenekler.B || '';
+                    clone.querySelector('.q-opt-c').value = existingData.secenekler.C || '';
+                    clone.querySelector('.q-opt-d').value = existingData.secenekler.D || '';
+                    clone.querySelector('.q-options-container').classList.remove('hidden');
+                }
+            }
+
+            container.appendChild(clone);
+        }
+
+        function removeQuestion(btn) {
+            btn.closest('.question-item').remove();
+        }
+
+        function toggleQuestionType(select) {
+            const container = select.closest('.question-item').querySelector('.q-options-container');
+            if (select.value === 'test') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function getSubjectColor(subject) {
+            const colors = {
+                'Matematik': 'blue-500',
+                'Türkçe': 'red-500',
+                'Fen Bilimleri': 'green-500',
+                'Sosyal Bilgiler': 'yellow-500',
+                'İngilizce': 'indigo-500'
+            };
+            return colors[subject] || 'purple-600'; // tailwind safelist gerekebilir
+        }
     </script>
 </body>
 
