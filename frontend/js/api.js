@@ -340,6 +340,32 @@ const API = {
     async getMyAssignments() {
         const response = await apiRequest('/assignments/student/me');
         return response.json();
+    },
+
+    // Charts
+    async getMyReadingSpeedChart(days = 30) {
+        const response = await apiRequest(`/charts/reading-speed/me?days=${days}`);
+        return response.json();
+    },
+
+    async getStudentReadingSpeedChart(studentId, days = 30) {
+        const response = await apiRequest(`/charts/reading-speed/${studentId}?days=${days}`);
+        return response.json();
+    },
+
+    async getMyStoryProgressChart() {
+        const response = await apiRequest('/charts/story-progress/me');
+        return response.json();
+    },
+
+    async getStudentStoryProgressChart(studentId) {
+        const response = await apiRequest(`/charts/story-progress/${studentId}`);
+        return response.json();
+    },
+
+    async getMyWeeklyActivityChart() {
+        const response = await apiRequest('/charts/weekly-activity/me');
+        return response.json();
     }
 };
 
