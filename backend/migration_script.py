@@ -61,6 +61,19 @@ def run_migration():
              completed_at TIMESTAMP WITH TIME ZONE
          )"""),
         
+        ("Create user_streaks table",
+         """CREATE TABLE IF NOT EXISTS user_streaks (
+             id SERIAL PRIMARY KEY,
+             user_id INTEGER NOT NULL UNIQUE REFERENCES users(id),
+             current_streak INTEGER DEFAULT 0,
+             longest_streak INTEGER DEFAULT 0,
+             last_activity_date DATE,
+             total_xp INTEGER DEFAULT 0,
+             level INTEGER DEFAULT 1,
+             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+         )"""),
+        
         ("Set existing users as approved",
          "UPDATE users SET is_approved = TRUE WHERE is_approved = FALSE OR is_approved IS NULL"),
     ]

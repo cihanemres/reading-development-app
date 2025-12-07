@@ -28,6 +28,7 @@ class User(Base):
     
     # Gamification relationships
     achievements = relationship("Achievement", back_populates="user")
+    streak = relationship("UserStreak", back_populates="user", uselist=False)
     
     # Assignment relationships (as student)
     assignments = relationship("Assignment", foreign_keys="Assignment.student_id", back_populates="student")

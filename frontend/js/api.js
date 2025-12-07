@@ -366,6 +366,29 @@ const API = {
     async getMyWeeklyActivityChart() {
         const response = await apiRequest('/charts/weekly-activity/me');
         return response.json();
+    },
+
+    // Gamification - Streak & XP
+    async getMyStreak() {
+        const response = await apiRequest('/gamification/streak/me');
+        return response.json();
+    },
+
+    async getMyXP() {
+        const response = await apiRequest('/gamification/xp/me');
+        return response.json();
+    },
+
+    async addXP(action) {
+        const response = await apiRequest(`/gamification/xp/add?action=${action}`, {
+            method: 'POST'
+        });
+        return response.json();
+    },
+
+    async getMyGamificationStats() {
+        const response = await apiRequest('/gamification/stats/me');
+        return response.json();
     }
 };
 

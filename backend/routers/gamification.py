@@ -261,3 +261,193 @@ async def get_my_progress(
         "remaining": max(0, next_milestone - story_count),
         "progress_percentage": min(100, progress_percentage)
     }
+
+
+# ===== STREAK & XP SYSTEM =====
+from models.user_streak import UserStreak, XP_VALUES, get_level_for_xp, get_xp_for_next_level
+from datetime import date
+
+def get_or_create_streak(user_id: int, db: Session) -> UserStreak:
+    """Get or create user streak record"""
+    streak = db.query(UserStreak).filter(UserStreak.user_id == user_id).first()
+    if not streak:
+        streak = UserStreak(user_id=user_id)
+        db.add(streak)
+        db.commit()
+        db.refresh(streak)
+    return streak
+
+def update_streak(user_id: int, db: Session) -> dict:
+    """Update user's streak based on activity"""
+    streak = get_or_create_streak(user_id, db)
+    today = date.today()
+    
+    if streak.last_activity_date is None:
+        # First activity
+        streak.current_streak = 1
+        streak.longest_streak = 1
+        streak.last_activity_date = today
+    elif streak.last_activity_date == today:
+        # Already logged today
+        pass
+    elif streak.last_activity_date == today - timedelta(days=1):
+        # Consecutive day
+        streak.current_streak += 1
+        if streak.current_streak > streak.longest_streak:
+            streak.longest_streak = streak.current_streak
+        streak.last_activity_date = today
+        
+        # Streak bonus XP
+        if streak.current_streak == 3:
+            add_xp(user_id, "streak_bonus_3", db)
+        elif streak.current_streak == 7:
+            add_xp(user_id, "streak_bonus_7", db)
+        elif streak.current_streak == 30:
+            add_xp(user_id, "streak_bonus_30", db)
+    else:
+        # Streak broken
+        streak.current_streak = 1
+        streak.last_activity_date = today
+    
+    db.commit()
+    return {
+        "current_streak": streak.current_streak,
+        "longest_streak": streak.longest_streak
+    }
+
+def add_xp(user_id: int, action: str, db: Session) -> int:
+    """Add XP for an action"""
+    streak = get_or_create_streak(user_id, db)
+    xp_amount = XP_VALUES.get(action, 0)
+    
+    streak.total_xp += xp_amount
+    streak.level = get_level_for_xp(streak.total_xp)
+    
+    db.commit()
+    return xp_amount
+
+
+@router.get("/streak/me")
+async def get_my_streak(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's streak info"""
+    streak = get_or_create_streak(current_user.id, db)
+    
+    return {
+        "current_streak": streak.current_streak,
+        "longest_streak": streak.longest_streak,
+        "last_activity": streak.last_activity_date.isoformat() if streak.last_activity_date else None,
+        "streak_status": "active" if streak.last_activity_date == date.today() else "inactive"
+    }
+
+
+@router.get("/xp/me")
+async def get_my_xp(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's XP and level info"""
+    streak = get_or_create_streak(current_user.id, db)
+    level_progress = get_xp_for_next_level(streak.total_xp, streak.level)
+    
+    return {
+        "total_xp": streak.total_xp,
+        "level": streak.level,
+        "level_name": get_level_name(streak.level),
+        "progress_to_next": level_progress,
+        "xp_values": XP_VALUES
+    }
+
+
+@router.post("/xp/add")
+async def add_user_xp(
+    action: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add XP for an action"""
+    if action not in XP_VALUES:
+        raise HTTPException(status_code=400, detail="Invalid action type")
+    
+    # Update streak on any activity
+    streak_info = update_streak(current_user.id, db)
+    
+    # Add XP
+    xp_added = add_xp(current_user.id, action, db)
+    
+    streak = get_or_create_streak(current_user.id, db)
+    
+    return {
+        "xp_added": xp_added,
+        "total_xp": streak.total_xp,
+        "level": streak.level,
+        "streak": streak_info
+    }
+
+
+@router.get("/stats/me")
+async def get_my_gamification_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all gamification stats for current user"""
+    streak = get_or_create_streak(current_user.id, db)
+    level_progress = get_xp_for_next_level(streak.total_xp, streak.level)
+    
+    # Get badges
+    achievements = db.query(Achievement).filter(
+        Achievement.user_id == current_user.id
+    ).all()
+    
+    badges = []
+    for achievement in achievements:
+        badge_info = BADGE_CRITERIA.get(achievement.badge_type, {})
+        badges.append({
+            "type": achievement.badge_type,
+            "name": badge_info.get("name", achievement.badge_type),
+            "icon": badge_info.get("icon", "🏅")
+        })
+    
+    return {
+        "xp": {
+            "total": streak.total_xp,
+            "level": streak.level,
+            "level_name": get_level_name(streak.level),
+            "progress": level_progress
+        },
+        "streak": {
+            "current": streak.current_streak,
+            "longest": streak.longest_streak,
+            "active_today": streak.last_activity_date == date.today()
+        },
+        "badges": {
+            "earned": badges,
+            "total": len(badges),
+            "available": len(BADGE_CRITERIA)
+        },
+        "reading": {
+            "stories": get_story_count(current_user.id, db),
+            "practices": get_practice_count(current_user.id, db),
+            "avg_speed": round(get_avg_speed(current_user.id, db), 1)
+        }
+    }
+
+
+def get_level_name(level: int) -> str:
+    """Get level name based on level number"""
+    level_names = {
+        1: "Çırak",
+        2: "Okur",
+        3: "Hikayeci",
+        4: "Kitap Kurdu",
+        5: "Usta Okur",
+        6: "Bilge",
+        7: "Efsane",
+        8: "Şampiyon",
+        9: "Kahraman",
+        10: "Efsanevi Okur"
+    }
+    return level_names.get(level, f"Seviye {level}")
+
