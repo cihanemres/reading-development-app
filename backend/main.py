@@ -1,16 +1,23 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import os
+import time
+import uuid
 from dotenv import load_dotenv
 
 from database import init_db
 from routers import auth, stories, reading, teacher, parent, admin, notifications, export, gamification, assignments
 import migration_script
+from logging_config import setup_logging, get_logger
 
 # Load environment variables
 load_dotenv()
+
+# Setup logging first
+setup_logging(level=os.getenv('LOG_LEVEL', 'INFO'))
+logger = get_logger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
@@ -30,7 +37,7 @@ allowed_origins = [
     "http://127.0.0.1:8000"
 ]
 
-print(f"🔧 Adding CORS for origins: {allowed_origins}")
+logger.info(f"Adding CORS for origins: {allowed_origins}")
 
 # Use Starlette's CORS middleware correctly
 app.add_middleware(
@@ -40,6 +47,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    request_id = str(uuid.uuid4())[:8]
+    start_time = time.time()
+    
+    # Log request
+    logger.info(f"[{request_id}] {request.method} {request.url.path}")
+    
+    try:
+        response = await call_next(request)
+        duration = time.time() - start_time
+        logger.info(f"[{request_id}] Completed {response.status_code} in {duration:.3f}s")
+        return response
+    except Exception as e:
+        duration = time.time() - start_time
+        logger.error(f"[{request_id}] Error after {duration:.3f}s: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"}
+        )
 
 # Mount static files
 os.makedirs("static/uploads/images", exist_ok=True)
@@ -61,15 +90,16 @@ app.include_router(assignments.router)
 @app.on_event("startup")
 async def startup_event():
     """Initialize database on startup"""
+    logger.info("Starting application...")
     init_db()
     try:
         migration_script.run_migration()
-        print("✅ Migration executed successfully")
+        logger.info("Migration executed successfully")
     except Exception as e:
-        print(f"⚠️ Migration failed: {e}")
+        logger.warning(f"Migration failed: {e}")
         
-    print("✅ Database initialized successfully")
-    print("🚀 Application started")
+    logger.info("Database initialized successfully")
+    logger.info("Application started")
 
 @app.get("/")
 async def root():
@@ -86,6 +116,21 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
 
+@app.get("/ready")
+async def ready_check():
+    """Readiness check endpoint"""
+    from database import get_db
+    try:
+        db = next(get_db())
+        db.execute("SELECT 1")
+        return {"status": "ready", "database": "connected"}
+    except Exception as e:
+        logger.error(f"Readiness check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not_ready", "database": "disconnected"}
+        )
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
@@ -94,3 +139,4 @@ if __name__ == "__main__":
         port=8000,
         reload=True
     )
+

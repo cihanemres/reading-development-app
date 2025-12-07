@@ -20,3 +20,12 @@ static/uploads/
 node_modules/
 dist/
 build/
+
+# Logs
+logs/
+*.log.*
+
+# Backups
+backups/
+*.backup
+*.bak
