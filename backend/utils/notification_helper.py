@@ -160,3 +160,152 @@ def notify_progress_milestone(
                 message=message,
                 link="/parent/dashboard"
             )
+
+
+def notify_level_up(
+    db: Session,
+    student_id: int,
+    new_level: int,
+    level_name: str
+):
+    """
+    Notify student when they level up
+    
+    Args:
+        db: Database session
+        student_id: ID of the student
+        new_level: New level number
+        level_name: Name of the new level
+    """
+    create_notification(
+        db=db,
+        user_id=student_id,
+        type="level_up",
+        title=f"🎊 Seviye Atladın: {level_name}!",
+        message=f"Tebrikler! Artık Seviye {new_level} - {level_name} oldun! Okumaya devam et!",
+        link="/student/dashboard"
+    )
+
+
+def notify_streak_bonus(
+    db: Session,
+    student_id: int,
+    streak_days: int,
+    xp_bonus: int
+):
+    """
+    Notify student when they earn a streak bonus
+    
+    Args:
+        db: Database session
+        student_id: ID of the student
+        streak_days: Number of consecutive days
+        xp_bonus: XP bonus earned
+    """
+    create_notification(
+        db=db,
+        user_id=student_id,
+        type="streak",
+        title=f"🔥 {streak_days} Gün Seri!",
+        message=f"Harika! {streak_days} gün üst üste okudun ve +{xp_bonus} XP bonus kazandın!",
+        link="/student/dashboard"
+    )
+
+
+def notify_streak_lost(
+    db: Session,
+    student_id: int,
+    lost_streak: int
+):
+    """
+    Notify student when they lose their streak
+    """
+    if lost_streak >= 3:  # Only notify if they had a decent streak
+        create_notification(
+            db=db,
+            user_id=student_id,
+            type="streak",
+            title="😢 Seri Kırıldı",
+            message=f"{lost_streak} günlük seri sona erdi. Yeniden başla!",
+            link="/student/dashboard"
+        )
+
+
+def notify_assignment(
+    db: Session,
+    student_id: int,
+    teacher_name: str,
+    story_title: str,
+    due_date: str = None
+):
+    """
+    Notify student of new assignment
+    """
+    message = f"{teacher_name} sana yeni bir ödev verdi: {story_title}"
+    if due_date:
+        message += f". Son tarih: {due_date}"
+    
+    create_notification(
+        db=db,
+        user_id=student_id,
+        type="assignment",
+        title="📝 Yeni Ödev",
+        message=message,
+        link="/student/dashboard"
+    )
+
+
+def notify_assignment_due_reminder(
+    db: Session,
+    student_id: int,
+    story_title: str,
+    hours_remaining: int
+):
+    """
+    Remind student of upcoming assignment deadline
+    """
+    if hours_remaining <= 24:
+        title = "⚠️ Ödev Son Gün!"
+        message = f"'{story_title}' ödevi bugün bitiyor. Hemen tamamla!"
+    else:
+        title = "📅 Ödev Hatırlatması"
+        message = f"'{story_title}' ödevinin bitmesine {hours_remaining // 24} gün kaldı."
+    
+    create_notification(
+        db=db,
+        user_id=student_id,
+        type="reminder",
+        title=title,
+        message=message,
+        link="/student/dashboard"
+    )
+
+
+def notify_xp_earned(
+    db: Session,
+    student_id: int,
+    action: str,
+    xp_amount: int
+):
+    """
+    Notify student of XP earned (optional, for significant amounts)
+    """
+    if xp_amount >= 15:  # Only notify for significant XP
+        action_names = {
+            "story_read": "Hikaye okuma",
+            "quiz_passed": "Quiz başarısı",
+            "perfect_score": "Mükemmel skor",
+            "speed_improvement": "Hız artışı"
+        }
+        
+        action_name = action_names.get(action, action)
+        
+        create_notification(
+            db=db,
+            user_id=student_id,
+            type="xp",
+            title=f"⭐ +{xp_amount} XP Kazandın!",
+            message=f"{action_name} için {xp_amount} XP kazandın!",
+            link="/student/dashboard"
+        )
+
