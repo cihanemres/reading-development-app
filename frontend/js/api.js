@@ -299,52 +299,12 @@ const API = {
         return response.json();
     },
 
-    async createStory(storyData) {
-        const response = await apiRequest('/stories', {
-            method: 'POST',
-            body: JSON.stringify(storyData)
-        });
-        return response.json();
-    },
-
-    async updateStory(storyId, storyData) {
-        const response = await apiRequest(`/stories/${storyId}`, {
-            method: 'PUT',
-            body: JSON.stringify(storyData)
-        });
-        return response.json();
-    },
-
-    async deleteStory(storyId) {
-        const response = await apiRequest(`/stories/${storyId}`, {
-            method: 'DELETE'
-        });
-        return response;
-    },
-
-    async uploadCover(storyId, file) {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await apiRequest(`/stories/${storyId}/upload-cover`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${getAuthToken()}`
-            },
-            body: formData
-        });
-        return response.json();
-    },
-
     async uploadAudio(storyId, file) {
         const formData = new FormData();
         formData.append('file', file);
 
         const response = await apiRequest(`/stories/${storyId}/upload-audio`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${getAuthToken()}`
-            },
             body: formData
         });
         return response.json();
@@ -379,27 +339,6 @@ const API = {
 
     async getMyAssignments() {
         const response = await apiRequest('/assignments/student/me');
-        return response.json();
-    },
-
-    // Parent
-    async getChildren() {
-        const response = await apiRequest('/parent/children');
-        return response.json();
-    },
-
-    async getChildProgress(childId) {
-        const response = await apiRequest(`/parent/child/${childId}/progress`);
-        return response.json();
-    },
-
-    async getTeacherComments(childId) {
-        const response = await apiRequest(`/parent/child/${childId}/teacher-comments`);
-        return response.json();
-    },
-
-    async getRecommendations(childId) {
-        const response = await apiRequest(`/parent/child/${childId}/recommendations`);
         return response.json();
     }
 };
