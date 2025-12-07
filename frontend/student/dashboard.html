@@ -376,6 +376,32 @@
                 loadStories();
                 loadStats();
             </script>
+
+            <!-- Mobile Bottom Navigation -->
+            <nav class="mobile-bottom-nav">
+                <a href="dashboard.html" class="mobile-nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Ana Sayfa</span>
+                </a>
+                <a href="my-progress.html" class="mobile-nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>İlerleme</span>
+                </a>
+                <a href="#" class="mobile-nav-item" onclick="showGamificationModal()">
+                    <i class="fas fa-trophy"></i>
+                    <span>Rozetler</span>
+                </a>
+                <a href="../profile.html" class="mobile-nav-item">
+                    <i class="fas fa-user"></i>
+                    <span>Profil</span>
+                </a>
+            </nav>
+
+            <script>
+                function showGamificationModal() {
+                    alert('Rozetler ve XP durumun için İlerleme sayfasına git!');
+                }
+            </script>
 </body>
 
 </html>
