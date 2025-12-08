@@ -55,8 +55,16 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Welcome Section -->
         <div class="gradient-bg text-white rounded-xl p-8 mb-8">
-            <h1 class="text-3xl font-bold mb-2">Hoş Geldiniz! 👋</h1>
-            <p class="text-purple-100">Çocuğunuzun okuma gelişimini takip edin</p>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Hoş Geldiniz! 👋</h1>
+                    <p class="text-purple-100">Çocuğunuzun okuma gelişimini takip edin</p>
+                </div>
+                <button onclick="openLinkModal()"
+                    class="mt-4 md:mt-0 bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-purple-50 transition">
+                    <i class="fas fa-plus mr-2"></i>Çocuk Bağla
+                </button>
+            </div>
         </div>
 
         <!-- Children List -->
@@ -95,9 +103,12 @@
                 if (!data.children || data.children.length === 0) {
                     document.getElementById('childrenContainer').innerHTML = `
                         <div class="bg-white rounded-xl shadow-md p-12 text-center">
-                            <i class="fas fa-user-graduate text-6xl text-gray-300 mb-4"></i>
+                            <i class="fas fa-user-graduate text-6xl text-purple-300 mb-4"></i>
                             <h3 class="text-xl font-bold text-gray-800 mb-2">Henüz Bağlı Çocuk Yok</h3>
-                            <p class="text-gray-600">Lütfen yönetici ile iletişime geçin.</p>
+                            <p class="text-gray-600 mb-6">Çocuğunuzun e-posta adresiyle hesabınıza bağlayabilirsiniz.</p>
+                            <button onclick="openLinkModal()" class="bg-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-purple-700 transition">
+                                <i class="fas fa-link mr-2"></i>Çocuk Bağla
+                            </button>
                         </div>
                     `;
                     return;
@@ -282,7 +293,97 @@
 
         // Initialize
         loadChildren();
+
+        // Link child modal functions
+        function openLinkModal() {
+            document.getElementById('linkModal').classList.remove('hidden');
+            document.getElementById('linkModal').classList.add('flex');
+        }
+
+        function closeLinkModal() {
+            document.getElementById('linkModal').classList.add('hidden');
+            document.getElementById('linkModal').classList.remove('flex');
+            document.getElementById('childEmail').value = '';
+            document.getElementById('linkError').classList.add('hidden');
+        }
+
+        async function linkChild() {
+            const email = document.getElementById('childEmail').value.trim();
+            if (!email) {
+                showLinkError('Lütfen e-posta adresi girin.');
+                return;
+            }
+
+            document.getElementById('linkBtn').disabled = true;
+            document.getElementById('linkBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Bağlanıyor...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/parent/link-child`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify({ child_email: email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    closeLinkModal();
+                    loadChildren();
+                    alert('✅ ' + data.message);
+                } else {
+                    showLinkError(data.detail || 'Bağlama işlemi başarısız.');
+                }
+            } catch (error) {
+                console.error(error);
+                showLinkError('Bir hata oluştu.');
+            } finally {
+                document.getElementById('linkBtn').disabled = false;
+                document.getElementById('linkBtn').innerHTML = '<i class="fas fa-link mr-2"></i>Bağla';
+            }
+        }
+
+        function showLinkError(message) {
+            const errorDiv = document.getElementById('linkError');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
     </script>
+
+    <!-- Link Child Modal -->
+    <div id="linkModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-link text-purple-600 mr-2"></i>Çocuk Bağla
+                </h2>
+                <button onclick="closeLinkModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <p class="text-gray-600 mb-6">Çocuğunuzun kayıtlı e-posta adresini girin:</p>
+
+            <input type="email" id="childEmail" placeholder="cocuk@email.com"
+                class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 mb-4 focus:border-purple-500 focus:outline-none"
+                onkeypress="if(event.key==='Enter') linkChild()">
+
+            <div id="linkError" class="hidden bg-red-100 text-red-600 px-4 py-2 rounded-lg mb-4 text-sm"></div>
+
+            <div class="flex gap-4">
+                <button onclick="closeLinkModal()"
+                    class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-300 transition">
+                    İptal
+                </button>
+                <button id="linkBtn" onclick="linkChild()"
+                    class="flex-1 bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition">
+                    <i class="fas fa-link mr-2"></i>Bağla
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

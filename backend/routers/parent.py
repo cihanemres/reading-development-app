@@ -210,3 +210,158 @@ async def get_practice_recommendations(
         "child_name": child.ad_soyad,
         "recommendations": recommendations
     }
+
+
+# ===== CHILD LINKING ENDPOINTS =====
+
+from pydantic import BaseModel
+import secrets
+import string
+
+class LinkChildRequest(BaseModel):
+    child_email: str
+
+class LinkCodeResponse(BaseModel):
+    link_code: str
+    expires_in: str
+
+# Simple in-memory storage for link codes (in production, use Redis or DB)
+link_codes = {}  # user_id -> code
+
+@router.post("/link-child")
+async def link_child_by_email(
+    request: LinkChildRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.PARENT))
+):
+    """
+    Link a child to parent account by email
+    The child must exist and not be linked to another parent
+    """
+    # Find the child
+    child = db.query(User).filter(
+        User.email == request.child_email,
+        User.rol == UserRole.STUDENT
+    ).first()
+    
+    if not child:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Öğrenci bulunamadı. E-posta adresini kontrol edin."
+        )
+    
+    if child.parent_id and child.parent_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bu öğrenci zaten başka bir veliye bağlı."
+        )
+    
+    if child.parent_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bu öğrenci zaten sizin hesabınıza bağlı."
+        )
+    
+    # Link the child
+    child.parent_id = current_user.id
+    db.commit()
+    
+    # Create notification
+    from utils.notification_helper import create_notification
+    create_notification(
+        db=db,
+        user_id=child.id,
+        type="account",
+        title="Veli Bağlantısı",
+        message=f"Hesabınız {current_user.ad_soyad} adlı veliye bağlandı.",
+        link="/student/dashboard"
+    )
+    
+    return {
+        "success": True,
+        "message": f"{child.ad_soyad} başarıyla hesabınıza bağlandı.",
+        "child": {
+            "id": child.id,
+            "ad_soyad": child.ad_soyad,
+            "sinif_duzeyi": child.sinif_duzeyi
+        }
+    }
+
+
+@router.delete("/unlink-child/{child_id}")
+async def unlink_child(
+    child_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.PARENT))
+):
+    """
+    Unlink a child from parent account
+    """
+    child = db.query(User).filter(
+        User.id == child_id,
+        User.rol == UserRole.STUDENT,
+        User.parent_id == current_user.id
+    ).first()
+    
+    if not child:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Çocuk bulunamadı veya hesabınıza bağlı değil."
+        )
+    
+    child.parent_id = None
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": f"{child.ad_soyad} hesabınızdan ayrıldı."
+    }
+
+
+@router.get("/dashboard-summary")
+async def get_parent_dashboard_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.PARENT))
+):
+    """
+    Get dashboard summary for parent - all children stats
+    """
+    children = db.query(User).filter(
+        User.rol == UserRole.STUDENT,
+        User.parent_id == current_user.id
+    ).all()
+    
+    if not children:
+        return {
+            "has_children": False,
+            "message": "Henüz hiçbir öğrenci hesabınıza bağlı değil.",
+            "children_summary": []
+        }
+    
+    children_summary = []
+    for child in children:
+        summary = get_student_progress_summary(child.id, db)
+        
+        # Get pending assignments
+        from models.assignment import Assignment
+        pending = db.query(Assignment).filter(
+            Assignment.student_id == child.id,
+            Assignment.status == 'bekliyor'
+        ).count()
+        
+        children_summary.append({
+            "id": child.id,
+            "ad_soyad": child.ad_soyad,
+            "sinif_duzeyi": child.sinif_duzeyi,
+            "total_stories": summary.get("total_stories", 0),
+            "total_practice": summary.get("total_practice_sessions", 0),
+            "average_speed": summary.get("average_speed_wpm", 0),
+            "pending_assignments": pending
+        })
+    
+    return {
+        "has_children": True,
+        "children_count": len(children),
+        "children_summary": children_summary
+    }
+
