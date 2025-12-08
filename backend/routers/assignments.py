@@ -80,6 +80,12 @@ async def create_assignments(
             status=AssignmentStatus.PENDING
         )
         db.add(new_assignment)
+        
+        # Send notification to student
+        from utils.notification_helper import notify_assignment
+        due_str = request.due_date.strftime("%d/%m/%Y") if request.due_date else None
+        notify_assignment(db, student_id, current_user.ad_soyad, story.baslik, due_str)
+        
         created_count += 1
     
     db.commit()
@@ -146,3 +152,130 @@ async def list_my_assignments(
         })
         
     return results
+
+
+@router.post("/{assignment_id}/complete")
+async def complete_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.STUDENT))
+):
+    """
+    Mark an assignment as completed
+    """
+    assignment = db.query(Assignment).filter(
+        Assignment.id == assignment_id,
+        Assignment.student_id == current_user.id
+    ).first()
+    
+    if not assignment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ödev bulunamadı"
+        )
+    
+    if assignment.status == AssignmentStatus.COMPLETED:
+        return {"success": True, "message": "Bu ödev zaten tamamlanmış"}
+    
+    assignment.status = AssignmentStatus.COMPLETED
+    assignment.completed_at = datetime.utcnow()
+    db.commit()
+    
+    # Notify teacher
+    from utils.notification_helper import create_notification
+    create_notification(
+        db=db,
+        user_id=assignment.teacher_id,
+        type="assignment",
+        title="Ödev Tamamlandı",
+        message=f"{current_user.ad_soyad} '{assignment.story.baslik}' ödevini tamamladı.",
+        link="/teacher/dashboard"
+    )
+    
+    return {"success": True, "message": "Ödev tamamlandı olarak işaretlendi"}
+
+
+@router.get("/student/pending-count")
+async def get_pending_assignment_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.STUDENT))
+):
+    """
+    Get count of pending assignments for badge display
+    """
+    count = db.query(Assignment).filter(
+        Assignment.student_id == current_user.id,
+        Assignment.status == AssignmentStatus.PENDING
+    ).count()
+    
+    # Check for urgent (due within 24 hours)
+    from datetime import timedelta
+    urgent = db.query(Assignment).filter(
+        Assignment.student_id == current_user.id,
+        Assignment.status == AssignmentStatus.PENDING,
+        Assignment.due_date != None,
+        Assignment.due_date <= datetime.utcnow() + timedelta(hours=24)
+    ).count()
+    
+    return {
+        "pending": count,
+        "urgent": urgent
+    }
+
+
+@router.get("/teacher/stats")
+async def get_teacher_assignment_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.TEACHER))
+):
+    """
+    Get assignment statistics for teacher dashboard
+    """
+    assignments = db.query(Assignment).filter(
+        Assignment.teacher_id == current_user.id
+    ).all()
+    
+    total = len(assignments)
+    pending = sum(1 for a in assignments if a.status == AssignmentStatus.PENDING)
+    completed = sum(1 for a in assignments if a.status == AssignmentStatus.COMPLETED)
+    
+    # Overdue assignments
+    overdue = sum(1 for a in assignments 
+                  if a.status == AssignmentStatus.PENDING 
+                  and a.due_date 
+                  and a.due_date < datetime.utcnow())
+    
+    return {
+        "total": total,
+        "pending": pending,
+        "completed": completed,
+        "overdue": overdue,
+        "completion_rate": round((completed / total) * 100) if total > 0 else 0
+    }
+
+
+@router.delete("/{assignment_id}")
+async def delete_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.TEACHER))
+):
+    """
+    Delete an assignment (Teacher only)
+    """
+    assignment = db.query(Assignment).filter(
+        Assignment.id == assignment_id,
+        Assignment.teacher_id == current_user.id
+    ).first()
+    
+    if not assignment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ödev bulunamadı"
+        )
+    
+    db.delete(assignment)
+    db.commit()
+    
+    return {"success": True, "message": "Ödev silindi"}
+
