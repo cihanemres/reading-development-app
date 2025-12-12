@@ -477,26 +477,27 @@
             }
 
             try {
-                await API.saveAnswers(payload);
-
-                // Try to add XP
-                let xpEarned = 15; // base quiz XP
-                if (score.percentage === 100) {
-                    xpEarned = 25; // perfect score
-                    try {
-                        await API.addXP('perfect_score');
-                    } catch (e) { }
-                } else {
-                    try {
-                        await API.addXP('quiz_passed');
-                    } catch (e) { }
-                }
-
-                showResults(score, mins, secs, xpEarned);
+                const response = await API.saveAnswers(payload);
+                console.log('Save response:', response);
             } catch (e) {
-                console.error(e);
-                alert('Hata oluştu!');
+                console.error('Save answers error:', e);
+                // Continue anyway - show results even if save failed
             }
+
+            // Try to add XP regardless of save result
+            let xpEarned = 15; // base quiz XP
+            if (score.percentage === 100) {
+                xpEarned = 25; // perfect score
+                try {
+                    await API.addXP('perfect_score');
+                } catch (e) { console.log('XP add failed:', e); }
+            } else if (score.percentage >= 50) {
+                try {
+                    await API.addXP('quiz_passed');
+                } catch (e) { console.log('XP add failed:', e); }
+            }
+
+            showResults(score, mins, secs, xpEarned);
         }
 
         function showResults(score, mins, secs, xp) {
