@@ -226,8 +226,12 @@
                 if (students.length === 0) {
                     container.innerHTML = `
                         <div class="text-center py-12 bg-gray-50 rounded-lg">
-                            <i class="fas fa-user-graduate text-4xl text-gray-300 mb-4"></i>
-                            <p class="text-gray-600">Öğrenci bulunamadı.</p>
+                            <i class="fas fa-user-graduate text-6xl text-purple-300 mb-4"></i>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Henüz Bağlı Öğrenci Yok</h3>
+                            <p class="text-gray-600 mb-6">Öğrenci e-postasıyla sınıfınıza öğrenci ekleyebilirsiniz.</p>
+                            <button onclick="openAddStudentModal()" class="bg-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-purple-700 transition">
+                                <i class="fas fa-user-plus mr-2"></i>Öğrenci Ekle
+                            </button>
                         </div>
                     `;
                     return;
@@ -348,6 +352,65 @@
             } catch (error) {
                 console.error('Export error:', error);
                 alert('Rapor indirirken hata oluştu!');
+            }
+        }
+
+        // Add Student Modal
+        function openAddStudentModal() {
+            const modal = document.createElement('div');
+            modal.id = 'addStudentModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+                    <div class="gradient-bg text-white p-6 rounded-t-xl flex items-center justify-between">
+                        <h2 class="text-xl font-bold"><i class="fas fa-user-plus mr-2"></i>Öğrenci Ekle</h2>
+                        <button onclick="closeAddStudentModal()" class="text-white hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-gray-600 mb-4">Öğrencinin kayıtlı e-posta adresini girin:</p>
+                        <input type="email" id="studentEmailInput" placeholder="ornek@email.com" 
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-4 focus:border-purple-500 focus:outline-none">
+                        <div id="addStudentError" class="text-red-500 text-sm mb-4 hidden"></div>
+                        <div class="flex space-x-3">
+                            <button onclick="closeAddStudentModal()" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg hover:bg-gray-300 transition">
+                                İptal
+                            </button>
+                            <button onclick="addStudent()" class="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition font-bold">
+                                <i class="fas fa-plus mr-2"></i>Ekle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function closeAddStudentModal() {
+            const modal = document.getElementById('addStudentModal');
+            if (modal) modal.remove();
+        }
+
+        async function addStudent() {
+            const email = document.getElementById('studentEmailInput').value.trim();
+            const errorDiv = document.getElementById('addStudentError');
+
+            if (!email) {
+                errorDiv.textContent = 'E-posta adresi gerekli';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await API.assignStudent(email);
+                alert('Öğrenci başarıyla eklendi!');
+                closeAddStudentModal();
+                loadStudents();
+            } catch (error) {
+                console.error('Error adding student:', error);
+                errorDiv.textContent = error.message || 'Öğrenci eklenirken hata oluştu';
+                errorDiv.classList.remove('hidden');
             }
         }
 
