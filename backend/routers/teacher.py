@@ -503,3 +503,153 @@ async def get_student_speech_practice(
         "stories": list(stories_data.values())
     }
 
+
+# ===== TEACHER PROFILE ENDPOINTS =====
+
+class TeacherProfileUpdate(BaseModel):
+    brans: Optional[str] = None
+    mezuniyet: Optional[str] = None
+    biyografi: Optional[str] = None
+
+
+@router.get("/profile/me")
+async def get_my_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.TEACHER))
+):
+    """
+    Get current teacher's profile with statistics
+    """
+    # Get student count
+    student_count = db.query(User).filter(
+        User.teacher_id == current_user.id,
+        User.rol == UserRole.STUDENT
+    ).count()
+    
+    # Get story/article count
+    story_count = db.query(Story).filter(Story.olusturan_id == current_user.id).count()
+    
+    return {
+        "id": current_user.id,
+        "ad_soyad": current_user.ad_soyad,
+        "email": current_user.email,
+        "brans": current_user.brans,
+        "mezuniyet": current_user.mezuniyet,
+        "biyografi": current_user.biyografi,
+        "ogrenci_sayisi": student_count,
+        "makale_sayisi": story_count,
+        "created_at": current_user.created_at.isoformat() if current_user.created_at else None
+    }
+
+
+@router.put("/profile/me")
+async def update_my_profile(
+    profile: TeacherProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.TEACHER))
+):
+    """
+    Update current teacher's profile
+    """
+    if profile.brans is not None:
+        current_user.brans = profile.brans
+    if profile.mezuniyet is not None:
+        current_user.mezuniyet = profile.mezuniyet
+    if profile.biyografi is not None:
+        current_user.biyografi = profile.biyografi
+    
+    db.commit()
+    db.refresh(current_user)
+    
+    return {
+        "success": True,
+        "message": "Profil güncellendi",
+        "profile": {
+            "brans": current_user.brans,
+            "mezuniyet": current_user.mezuniyet,
+            "biyografi": current_user.biyografi
+        }
+    }
+
+
+@router.get("/profile/{teacher_id}")
+async def get_teacher_profile(
+    teacher_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get a teacher's public profile (for students/parents to view)
+    """
+    teacher = db.query(User).filter(
+        User.id == teacher_id,
+        User.rol == UserRole.TEACHER
+    ).first()
+    
+    if not teacher:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Öğretmen bulunamadı"
+        )
+    
+    # Get statistics
+    student_count = db.query(User).filter(
+        User.teacher_id == teacher.id,
+        User.rol == UserRole.STUDENT
+    ).count()
+    
+    story_count = db.query(Story).filter(Story.olusturan_id == teacher.id).count()
+    
+    return {
+        "id": teacher.id,
+        "ad_soyad": teacher.ad_soyad,
+        "brans": teacher.brans,
+        "mezuniyet": teacher.mezuniyet,
+        "biyografi": teacher.biyografi,
+        "ogrenci_sayisi": student_count,
+        "makale_sayisi": story_count
+    }
+
+
+@router.get("/list")
+async def list_teachers(
+    brans: Optional[str] = None,
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    List all teachers (for students to find and request)
+    """
+    query = db.query(User).filter(
+        User.rol == UserRole.TEACHER,
+        User.is_approved == True
+    )
+    
+    if brans:
+        query = query.filter(User.brans.ilike(f"%{brans}%"))
+    
+    if search:
+        query = query.filter(User.ad_soyad.ilike(f"%{search}%"))
+    
+    teachers = query.all()
+    
+    result = []
+    for t in teachers:
+        student_count = db.query(User).filter(
+            User.teacher_id == t.id,
+            User.rol == UserRole.STUDENT
+        ).count()
+        
+        story_count = db.query(Story).filter(Story.olusturan_id == t.id).count()
+        
+        result.append({
+            "id": t.id,
+            "ad_soyad": t.ad_soyad,
+            "brans": t.brans,
+            "mezuniyet": t.mezuniyet,
+            "ogrenci_sayisi": student_count,
+            "makale_sayisi": story_count
+        })
+    
+    return {"teachers": result}

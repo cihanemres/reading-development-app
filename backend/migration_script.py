@@ -86,6 +86,14 @@ def run_migration():
              read_at TIMESTAMP WITH TIME ZONE
          )"""),
         
+        ("Add teacher profile fields to users",
+         """DO $$ BEGIN
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS brans VARCHAR(100);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS mezuniyet VARCHAR(255);
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS biyografi VARCHAR(500);
+         EXCEPTION WHEN others THEN NULL;
+         END $$;"""),
+        
         ("Set existing users as approved",
          "UPDATE users SET is_approved = TRUE WHERE is_approved = FALSE OR is_approved IS NULL"),
     ]

@@ -23,6 +23,12 @@ class User(Base):
     parent_id = Column(Integer, nullable=True)  # For linking student to parent (Legacy, no FK)
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Linked teacher
     is_approved = Column(Boolean, default=False)
+    
+    # Teacher profile fields
+    brans = Column(String(100), nullable=True)  # Specialization/Subject
+    mezuniyet = Column(String(255), nullable=True)  # Degree/University
+    biyografi = Column(String(500), nullable=True)  # Short bio
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
