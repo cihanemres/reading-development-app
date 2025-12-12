@@ -653,3 +653,197 @@ async def list_teachers(
         })
     
     return {"teachers": result}
+
+
+# ===== STUDENT-TEACHER REQUEST SYSTEM =====
+
+from models.teacher_request import TeacherRequest, RequestStatus
+
+class TeacherRequestCreate(BaseModel):
+    teacher_id: int
+    message: Optional[str] = None
+
+
+class RequestResponse(BaseModel):
+    accept: bool
+    message: Optional[str] = None
+
+
+@router.post("/request")
+async def send_teacher_request(
+    request: TeacherRequestCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.STUDENT))
+):
+    """
+    Student sends a request to join a teacher
+    """
+    # Check if teacher exists
+    teacher = db.query(User).filter(
+        User.id == request.teacher_id,
+        User.rol == UserRole.TEACHER
+    ).first()
+    
+    if not teacher:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Öğretmen bulunamadı"
+        )
+    
+    # Check if already linked
+    if current_user.teacher_id == request.teacher_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Zaten bu öğretmene bağlısınız"
+        )
+    
+    # Check for existing pending request
+    existing = db.query(TeacherRequest).filter(
+        TeacherRequest.student_id == current_user.id,
+        TeacherRequest.teacher_id == request.teacher_id,
+        TeacherRequest.status == RequestStatus.PENDING
+    ).first()
+    
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bu öğretmene zaten bir istek gönderilmiş"
+        )
+    
+    # Create request
+    new_request = TeacherRequest(
+        student_id=current_user.id,
+        teacher_id=request.teacher_id,
+        message=request.message
+    )
+    db.add(new_request)
+    db.commit()
+    
+    # Notify teacher
+    from utils.notification_helper import create_notification
+    create_notification(
+        db=db,
+        user_id=request.teacher_id,
+        type="request",
+        title="Yeni Öğrenci İsteği",
+        message=f"{current_user.ad_soyad} sizinle çalışmak istiyor",
+        link="/teacher/dashboard"
+    )
+    
+    return {"success": True, "message": "İstek gönderildi"}
+
+
+@router.get("/requests/pending")
+async def get_pending_requests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.TEACHER))
+):
+    """
+    Get pending student requests for teacher
+    """
+    requests = db.query(TeacherRequest).filter(
+        TeacherRequest.teacher_id == current_user.id,
+        TeacherRequest.status == RequestStatus.PENDING
+    ).order_by(TeacherRequest.created_at.desc()).all()
+    
+    result = []
+    for req in requests:
+        result.append({
+            "id": req.id,
+            "student_id": req.student_id,
+            "student_name": req.student.ad_soyad if req.student else "Unknown",
+            "student_grade": req.student.sinif_duzeyi if req.student else None,
+            "message": req.message,
+            "created_at": req.created_at.isoformat()
+        })
+    
+    return {"requests": result, "count": len(result)}
+
+
+@router.post("/requests/{request_id}/respond")
+async def respond_to_request(
+    request_id: int,
+    response: RequestResponse,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.TEACHER))
+):
+    """
+    Accept or reject a student request
+    """
+    from datetime import datetime
+    
+    req = db.query(TeacherRequest).filter(
+        TeacherRequest.id == request_id,
+        TeacherRequest.teacher_id == current_user.id
+    ).first()
+    
+    if not req:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="İstek bulunamadı"
+        )
+    
+    if req.status != RequestStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bu istek zaten yanıtlanmış"
+        )
+    
+    if response.accept:
+        req.status = RequestStatus.ACCEPTED
+        
+        # Link student to teacher
+        student = db.query(User).filter(User.id == req.student_id).first()
+        if student:
+            student.teacher_id = current_user.id
+        
+        notification_title = "İstek Kabul Edildi"
+        notification_msg = f"{current_user.ad_soyad} isteğinizi kabul etti"
+    else:
+        req.status = RequestStatus.REJECTED
+        notification_title = "İstek Reddedildi"
+        notification_msg = f"{current_user.ad_soyad} isteğinizi reddetti"
+    
+    req.responded_at = datetime.utcnow()
+    req.response_message = response.message
+    db.commit()
+    
+    # Notify student
+    from utils.notification_helper import create_notification
+    create_notification(
+        db=db,
+        user_id=req.student_id,
+        type="request",
+        title=notification_title,
+        message=notification_msg,
+        link="/student/dashboard"
+    )
+    
+    return {"success": True, "message": "Yanıt gönderildi"}
+
+
+@router.get("/my-requests")
+async def get_my_requests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.STUDENT))
+):
+    """
+    Get student's own requests
+    """
+    requests = db.query(TeacherRequest).filter(
+        TeacherRequest.student_id == current_user.id
+    ).order_by(TeacherRequest.created_at.desc()).all()
+    
+    result = []
+    for req in requests:
+        result.append({
+            "id": req.id,
+            "teacher_id": req.teacher_id,
+            "teacher_name": req.teacher.ad_soyad if req.teacher else "Unknown",
+            "status": req.status.value,
+            "message": req.message,
+            "response_message": req.response_message,
+            "created_at": req.created_at.isoformat()
+        })
+    
+    return {"requests": result}

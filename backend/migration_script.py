@@ -101,6 +101,38 @@ def run_migration():
          EXCEPTION WHEN others THEN NULL;
          END $$;"""),
         
+        ("Create agenda_items table",
+         """CREATE TABLE IF NOT EXISTS agenda_items (
+             id SERIAL PRIMARY KEY,
+             user_id INTEGER NOT NULL REFERENCES users(id),
+             item_type VARCHAR(50) NOT NULL DEFAULT 'task',
+             title VARCHAR(255) NOT NULL,
+             description TEXT,
+             date DATE NOT NULL,
+             time VARCHAR(10),
+             is_recurring BOOLEAN DEFAULT FALSE,
+             recurrence_type VARCHAR(20),
+             is_completed BOOLEAN DEFAULT FALSE,
+             completed_at TIMESTAMP WITH TIME ZONE,
+             story_id INTEGER REFERENCES stories(id),
+             teacher_id INTEGER REFERENCES users(id),
+             notify_before INTEGER,
+             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+             updated_at TIMESTAMP WITH TIME ZONE
+         )"""),
+        
+        ("Create teacher_requests table",
+         """CREATE TABLE IF NOT EXISTS teacher_requests (
+             id SERIAL PRIMARY KEY,
+             student_id INTEGER NOT NULL REFERENCES users(id),
+             teacher_id INTEGER NOT NULL REFERENCES users(id),
+             message VARCHAR(500),
+             status VARCHAR(20) DEFAULT 'bekliyor',
+             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+             responded_at TIMESTAMP WITH TIME ZONE,
+             response_message VARCHAR(500)
+         )"""),
+        
         ("Set existing users as approved",
          "UPDATE users SET is_approved = TRUE WHERE is_approved = FALSE OR is_approved IS NULL"),
     ]
