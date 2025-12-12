@@ -16,6 +16,8 @@ class Story(Base):
     ses_dosyasi = Column(String(500), nullable=True)  # Path to MP3 file
     kelime_sayisi = Column(Integer, nullable=True)  # Auto-calculated word count
     sorular = Column(Text, nullable=True)  # JSON string for flexible questions
+    okuma_suresi = Column(Integer, nullable=True)  # Reading time limit in seconds
+    olusturan_id = Column(Integer, nullable=True)  # Creator teacher ID
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

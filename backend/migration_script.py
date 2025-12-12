@@ -94,6 +94,13 @@ def run_migration():
          EXCEPTION WHEN others THEN NULL;
          END $$;"""),
         
+        ("Add story time and creator fields",
+         """DO $$ BEGIN
+            ALTER TABLE stories ADD COLUMN IF NOT EXISTS okuma_suresi INTEGER;
+            ALTER TABLE stories ADD COLUMN IF NOT EXISTS olusturan_id INTEGER;
+         EXCEPTION WHEN others THEN NULL;
+         END $$;"""),
+        
         ("Set existing users as approved",
          "UPDATE users SET is_approved = TRUE WHERE is_approved = FALSE OR is_approved IS NULL"),
     ]

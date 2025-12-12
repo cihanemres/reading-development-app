@@ -387,3 +387,111 @@ async def delete_quiz_question(
     db.commit()
     
     return None
+
+
+# ===== STORY STATISTICS =====
+
+@router.get("/{story_id}/stats")
+async def get_story_statistics(
+    story_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_role([UserRole.ADMIN, UserRole.TEACHER]))
+):
+    """
+    Get statistics for a story: read count, assignment count, error count
+    """
+    from models.reading_activity import PreReading, Practice
+    from models.assignment import Assignment
+    from models.evaluation import TeacherEvaluation
+    
+    story = db.query(Story).filter(Story.id == story_id).first()
+    if not story:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hikaye bulunamadı"
+        )
+    
+    # Count unique readers (pre-reading)
+    read_count = db.query(PreReading.ogrenci_id).filter(
+        PreReading.story_id == story_id
+    ).distinct().count()
+    
+    # Count practice sessions
+    practice_count = db.query(Practice).filter(
+        Practice.story_id == story_id
+    ).count()
+    
+    # Count assignments
+    assignment_count = db.query(Assignment).filter(
+        Assignment.story_id == story_id
+    ).count()
+    
+    # Count completed assignments
+    completed_assignments = db.query(Assignment).filter(
+        Assignment.story_id == story_id,
+        Assignment.status == 'tamamlandi'
+    ).count()
+    
+    # Count evaluations with errors (hatali_kelime not empty)
+    error_count = db.query(TeacherEvaluation).filter(
+        TeacherEvaluation.story_id == story_id,
+        TeacherEvaluation.hatali_kelime != None,
+        TeacherEvaluation.hatali_kelime != ""
+    ).count()
+    
+    # Average scores
+    avg_fluency = db.query(func.avg(TeacherEvaluation.akicilik_puan)).filter(
+        TeacherEvaluation.story_id == story_id,
+        TeacherEvaluation.akicilik_puan != None
+    ).scalar()
+    
+    avg_comprehension = db.query(func.avg(TeacherEvaluation.acik_soru_puani)).filter(
+        TeacherEvaluation.story_id == story_id,
+        TeacherEvaluation.acik_soru_puani != None
+    ).scalar()
+    
+    return {
+        "story_id": story_id,
+        "baslik": story.baslik,
+        "okunma_sayisi": read_count,
+        "pratik_sayisi": practice_count,
+        "atanma_sayisi": assignment_count,
+        "tamamlanan_odev": completed_assignments,
+        "hata_sayisi": error_count,
+        "ortalama_akicilik": round(avg_fluency, 1) if avg_fluency else None,
+        "ortalama_anlama": round(avg_comprehension, 1) if avg_comprehension else None
+    }
+
+
+@router.get("/popular/list")
+async def get_popular_stories(
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get most popular stories by read count
+    """
+    from models.reading_activity import PreReading
+    from sqlalchemy import desc
+    
+    # Get stories with read counts
+    popular = db.query(
+        Story,
+        func.count(PreReading.ogrenci_id.distinct()).label('read_count')
+    ).outerjoin(
+        PreReading, Story.id == PreReading.story_id
+    ).group_by(Story.id).order_by(desc('read_count')).limit(limit).all()
+    
+    result = []
+    for story, read_count in popular:
+        result.append({
+            "id": story.id,
+            "baslik": story.baslik,
+            "ders": story.ders,
+            "sinif_duzeyi": story.sinif_duzeyi,
+            "okunma_sayisi": read_count or 0,
+            "kapak_gorseli": story.kapak_gorseli
+        })
+    
+    return {"stories": result}
