@@ -49,6 +49,17 @@ class EvaluationResponse(BaseModel):
     class Config:
         from_attributes = True
 
+@router.get("/all")
+async def get_all_teachers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get list of all teachers (for messaging purposes)
+    """
+    teachers = db.query(User).filter(User.rol == UserRole.TEACHER).all()
+    return [{"id": t.id, "ad_soyad": t.ad_soyad, "email": t.email} for t in teachers]
+
 @router.get("/students", response_model=List[StudentInfo])
 async def get_students(
     sinif_duzeyi: Optional[int] = None,

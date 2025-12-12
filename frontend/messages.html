@@ -184,7 +184,7 @@
                 const endpoint = currentTab === 'inbox' ? 'inbox' : 'sent';
                 const response = await fetch(`${API_BASE_URL}/messages/${endpoint}`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
                 const data = await response.json();
@@ -258,7 +258,7 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/messages/conversation/${otherUserId}`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
                 const data = await response.json();
@@ -338,7 +338,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
                     body: JSON.stringify({
                         receiver_id: receiverId,
@@ -378,26 +378,61 @@
                 let receivers = [];
 
                 if (user.rol === 'ogrenci') {
-                    // Students can message their teacher
-                    const teachers = await fetch(`${API_BASE_URL}/teacher/list?student_id=${user.id}`, {
-                        headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-                    }).then(r => r.json()).catch(() => []);
-                    receivers = Array.isArray(teachers) ? teachers : [];
+                    // Students can message their teacher if linked
+                    if (user.teacher_id) {
+                        // Get teacher info from API
+                        try {
+                            const teacherResp = await fetch(`${API_BASE_URL}/teacher/profile/${user.teacher_id}`, {
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                            });
+                            if (teacherResp.ok) {
+                                const teacher = await teacherResp.json();
+                                receivers = [{ id: teacher.id, ad_soyad: teacher.ad_soyad }];
+                            }
+                        } catch (e) {
+                            console.log('Could not fetch teacher:', e);
+                        }
+                    }
+                    // Also try to get all teachers as fallback
+                    if (receivers.length === 0) {
+                        try {
+                            const allTeachers = await fetch(`${API_BASE_URL}/teacher/all`, {
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                            });
+                            if (allTeachers.ok) {
+                                const data = await allTeachers.json();
+                                receivers = data.teachers || data || [];
+                            }
+                        } catch (e) {
+                            console.log('Could not fetch teachers list:', e);
+                        }
+                    }
                 } else if (user.rol === 'ogretmen') {
                     // Teachers can message their students
-                    const students = await fetch(`${API_BASE_URL}/teacher/students`, {
-                        headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-                    }).then(r => r.json()).catch(() => ({ students: [] }));
-                    receivers = students.students || [];
+                    try {
+                        const studentsResp = await fetch(`${API_BASE_URL}/teacher/students`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                        });
+                        if (studentsResp.ok) {
+                            const students = await studentsResp.json();
+                            receivers = Array.isArray(students) ? students : (students.students || []);
+                        }
+                    } catch (e) {
+                        console.log('Could not fetch students:', e);
+                    }
                 }
 
                 const select = document.getElementById('receiverSelect');
-                if (!select.innerHTML.includes('value=')) {
-                    select.innerHTML = '<option value="">Seçin...</option>' +
-                        receivers.map(r => `<option value="${r.id}">${r.ad_soyad}</option>`).join('');
+                if (!select.innerHTML.includes('value=') || select.querySelectorAll('option').length <= 1) {
+                    if (receivers.length > 0) {
+                        select.innerHTML = '<option value="">Seçin...</option>' +
+                            receivers.map(r => `<option value="${r.id}">${r.ad_soyad}</option>`).join('');
+                    } else {
+                        select.innerHTML = '<option value="">Alıcı bulunamadı</option>';
+                    }
                 }
             } catch (e) {
-                console.error(e);
+                console.error('loadReceivers error:', e);
             }
         }
 
@@ -419,7 +454,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
                     body: JSON.stringify({
                         receiver_id: parseInt(receiverId),
