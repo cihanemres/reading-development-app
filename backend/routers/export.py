@@ -258,8 +258,9 @@ async def export_teacher_students(
     """
     Export teacher's own students as Excel file
     Optionally filter by grade
+    Falls back to all students if no linked students
     """
-    # Get teacher's students
+    # First try to get teacher's linked students
     query = db.query(User).filter(
         User.rol == UserRole.STUDENT,
         User.teacher_id == current_user.id
@@ -270,10 +271,17 @@ async def export_teacher_students(
     
     students = query.all()
     
+    # Fallback: if no linked students, get all students (for demo purposes)
+    if not students:
+        fallback_query = db.query(User).filter(User.rol == UserRole.STUDENT)
+        if grade:
+            fallback_query = fallback_query.filter(User.sinif_duzeyi == grade)
+        students = fallback_query.all()
+        
     if not students:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Bağlı öğrenci bulunamadı. Önce öğrenci ekleyin."
+            detail="Sistemde öğrenci bulunamadı."
         )
     
     # Prepare data
