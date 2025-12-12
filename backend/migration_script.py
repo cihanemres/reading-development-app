@@ -71,7 +71,19 @@ def run_migration():
              total_xp INTEGER DEFAULT 0,
              level INTEGER DEFAULT 1,
              created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+         )"""),
+        
+        ("Create messages table",
+         """CREATE TABLE IF NOT EXISTS messages (
+             id SERIAL PRIMARY KEY,
+             sender_id INTEGER NOT NULL REFERENCES users(id),
+             receiver_id INTEGER NOT NULL REFERENCES users(id),
+             subject VARCHAR(255),
+             content TEXT NOT NULL,
+             is_read BOOLEAN DEFAULT FALSE,
+             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+             read_at TIMESTAMP WITH TIME ZONE
          )"""),
         
         ("Set existing users as approved",

@@ -8,7 +8,7 @@ import uuid
 from dotenv import load_dotenv
 
 from database import init_db
-from routers import auth, stories, reading, teacher, parent, admin, notifications, export, gamification, assignments, charts
+from routers import auth, stories, reading, teacher, parent, admin, notifications, export, gamification, assignments, charts, messages
 import migration_script
 from logging_config import setup_logging, get_logger
 
@@ -87,6 +87,7 @@ app.include_router(export.router)
 app.include_router(gamification.router)
 app.include_router(assignments.router)
 app.include_router(charts.router)
+app.include_router(messages.router)
 
 @app.on_event("startup")
 async def startup_event():
