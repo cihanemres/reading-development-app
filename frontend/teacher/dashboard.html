@@ -338,9 +338,23 @@
         async function exportClassData() {
             try {
                 const grade = document.getElementById('gradeFilter').value;
-                const url = grade ? `/export/class?grade=${grade}` : '/export/class';
-                const blob = await API.apiRequest(url, 'GET', null, 'blob');
+                const token = localStorage.getItem('token');
 
+                let url = `${API_BASE_URL}/export/class`;
+                if (grade) url += `?grade=${grade}`;
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+
+                const blob = await response.blob();
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = downloadUrl;
@@ -349,9 +363,11 @@
                 a.click();
                 window.URL.revokeObjectURL(downloadUrl);
                 a.remove();
+
+                alert('Rapor başarıyla indirildi!');
             } catch (error) {
                 console.error('Export error:', error);
-                alert('Rapor indirirken hata oluştu!');
+                alert('Rapor indirirken hata oluştu! Lütfen önce öğrenci ekleyin.');
             }
         }
 
