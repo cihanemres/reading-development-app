@@ -249,6 +249,104 @@ async def export_class_progress(
     )
 
 
+@router.get("/class")
+async def export_teacher_students(
+    grade: int = None,
+    current_user: User = Depends(require_role(UserRole.TEACHER)),
+    db: Session = Depends(get_db)
+):
+    """
+    Export teacher's own students as Excel file
+    Optionally filter by grade
+    """
+    # Get teacher's students
+    query = db.query(User).filter(
+        User.rol == UserRole.STUDENT,
+        User.teacher_id == current_user.id
+    )
+    
+    if grade:
+        query = query.filter(User.sinif_duzeyi == grade)
+    
+    students = query.all()
+    
+    if not students:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bağlı öğrenci bulunamadı. Önce öğrenci ekleyin."
+        )
+    
+    # Prepare data
+    data = []
+    for student in students:
+        # Count completed stories
+        story_count = db.query(PreReading).filter(
+            PreReading.ogrenci_id == student.id
+        ).count()
+        
+        # Calculate average speed
+        avg_speed = db.query(func.avg(PreReading.okuma_hizi)).filter(
+            PreReading.ogrenci_id == student.id
+        ).scalar()
+        
+        # Count practices
+        practice_count = db.query(Practice).filter(
+            Practice.ogrenci_id == student.id
+        ).count()
+        
+        # Calculate quiz average
+        answers = db.query(Answer).filter(
+            Answer.ogrenci_id == student.id
+        ).all()
+        
+        quiz_avg = sum((a.dogru_sayisi or 0) for a in answers) / len(answers) if answers else 0
+        
+        data.append({
+            'Öğrenci Adı': student.ad_soyad,
+            'Email': student.email,
+            'Sınıf': student.sinif_duzeyi,
+            'Tamamlanan Hikaye': story_count,
+            'Ortalama Hız (kelime/dk)': round(avg_speed, 1) if avg_speed else 0,
+            'Toplam Pratik': practice_count,
+            'Quiz Ortalaması': f"{quiz_avg:.1f}/5"
+        })
+    
+    # Create DataFrame
+    df = pd.DataFrame(data)
+    
+    # Sort by name
+    df = df.sort_values('Öğrenci Adı')
+    
+    # Create Excel file
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Öğrencilerim', index=False)
+        
+        # Auto-adjust column widths
+        worksheet = writer.sheets['Öğrencilerim']
+        for column in worksheet.columns:
+            max_length = 0
+            column = [cell for cell in column]
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            worksheet.column_dimensions[column[0].column_letter].width = adjusted_width
+    
+    output.seek(0)
+    
+    filename = f"ogrencilerim_raporu_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    
+    return StreamingResponse(
+        output,
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
+
 # ==================== PDF EXPORT ENDPOINTS ====================
 
 @router.get("/student/{student_id}/progress/pdf")
