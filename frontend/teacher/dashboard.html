@@ -113,6 +113,8 @@
                         <i class="fas fa-envelope mr-2 text-blue-600"></i>
                         Mesajlar
                     </h2>
+                    <span id="unreadMessageCount"
+                        class="hidden bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold"></span>
                 </div>
                 <p class="text-gray-600 mb-4 flex-1">Öğrencilerinizle iletişim kurun</p>
                 <button onclick="window.location.href='../messages.html'"
@@ -451,9 +453,32 @@
             }
         }
 
+        // Load unread message count
+        async function loadUnreadMessages() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/messages/inbox`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const unreadCount = data.unread || 0;
+                    const badge = document.getElementById('unreadMessageCount');
+                    if (unreadCount > 0) {
+                        badge.textContent = unreadCount;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            } catch (e) {
+                console.log('Could not load unread messages:', e);
+            }
+        }
+
         // Initialize
         loadStudents();
         loadPendingCount();
+        loadUnreadMessages();
     </script>
 </body>
 

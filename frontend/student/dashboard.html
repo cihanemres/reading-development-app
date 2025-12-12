@@ -94,9 +94,11 @@
                     </div>
                     <!-- Messages -->
                     <a href="../messages.html"
-                        class="bg-white/20 backdrop-blur rounded-lg px-4 py-2 text-center hover:bg-white/30 transition">
+                        class="bg-white/20 backdrop-blur rounded-lg px-4 py-2 text-center hover:bg-white/30 transition relative">
                         <p class="text-xs text-purple-200">Mesajlar</p>
                         <p class="text-xl font-bold"><i class="fas fa-envelope"></i></p>
+                        <span id="unreadMessageBadge"
+                            class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold"></span>
                     </a>
                 </div>
             </div>
@@ -302,6 +304,27 @@
                     }
                 }
                 loadGamificationStats();
+
+                // Load unread message count
+                async function loadUnreadMessages() {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/messages/inbox`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            const unreadCount = data.unread || 0;
+                            const badge = document.getElementById('unreadMessageBadge');
+                            if (unreadCount > 0) {
+                                badge.textContent = unreadCount;
+                                badge.classList.remove('hidden');
+                            }
+                        }
+                    } catch (e) {
+                        console.log('Could not load unread messages:', e);
+                    }
+                }
+                loadUnreadMessages();
 
                 let currentSubject = null;
                 let currentSearch = '';
