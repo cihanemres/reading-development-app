@@ -2,17 +2,17 @@
 Gamification Router
 Handles achievement badges and leaderboard
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import List, Optional
 from datetime import datetime, timedelta
 
 from database import get_db
-from models.user import User
+from models.user import User, UserRole
 from models.achievement import Achievement
 from models.reading_activity import PreReading, Practice
-from auth.dependencies import get_current_user
+from auth.dependencies import get_current_user, require_role
 
 router = APIRouter(prefix="/api/gamification", tags=["gamification"])
 
