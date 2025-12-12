@@ -70,8 +70,30 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <!-- Welcome Section -->
         <div class="gradient-bg text-white rounded-xl p-6 md:p-8 mb-8 shadow-lg">
-            <h1 class="text-2xl md:text-3xl font-bold mb-2">Hoş Geldin! 👋</h1>
-            <p class="text-purple-100">Bugün hangi dersten hikâye okumak istersin?</p>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold mb-2">Hoş Geldin, <span id="welcomeName">Öğrenci</span>!
+                        👋</h1>
+                    <p class="text-purple-100">Bugün hangi dersten hikâye okumak istersin?</p>
+                </div>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <!-- XP -->
+                    <div class="bg-white/20 backdrop-blur rounded-lg px-4 py-2 text-center">
+                        <p class="text-xs text-purple-200">XP Puanı</p>
+                        <p class="text-xl font-bold" id="userXP">0</p>
+                    </div>
+                    <!-- Level -->
+                    <div class="bg-white/20 backdrop-blur rounded-lg px-4 py-2 text-center">
+                        <p class="text-xs text-purple-200">Seviye</p>
+                        <p class="text-xl font-bold" id="userLevel">1</p>
+                    </div>
+                    <!-- Streak -->
+                    <div class="bg-white/20 backdrop-blur rounded-lg px-4 py-2 text-center">
+                        <p class="text-xs text-purple-200">Seri 🔥</p>
+                        <p class="text-xl font-bold" id="userStreak">0</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Subject Selection -->
@@ -241,7 +263,23 @@
                 const user = getCurrentUserInfo();
 
                 document.getElementById('userName').textContent = user.ad_soyad;
+                document.getElementById('welcomeName').textContent = user.ad_soyad.split(' ')[0]; // First name
                 document.getElementById('userGrade').textContent = user.sinif_duzeyi ? `${user.sinif_duzeyi}. Sınıf` : '';
+
+                // Load gamification stats
+                async function loadGamificationStats() {
+                    try {
+                        const stats = await API.getMyGamificationStats();
+                        if (stats) {
+                            document.getElementById('userXP').textContent = stats.total_xp || 0;
+                            document.getElementById('userLevel').textContent = stats.level || 1;
+                            document.getElementById('userStreak').textContent = stats.streak_days || 0;
+                        }
+                    } catch (error) {
+                        console.error('Error loading gamification stats:', error);
+                    }
+                }
+                loadGamificationStats();
 
                 let currentSubject = null;
                 let currentSearch = '';
@@ -383,13 +421,13 @@
                     <i class="fas fa-home"></i>
                     <span>Ana Sayfa</span>
                 </a>
+                <a href="../messages.html" class="mobile-nav-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>Mesajlar</span>
+                </a>
                 <a href="my-progress.html" class="mobile-nav-item">
                     <i class="fas fa-chart-line"></i>
                     <span>İlerleme</span>
-                </a>
-                <a href="#" class="mobile-nav-item" onclick="showGamificationModal()">
-                    <i class="fas fa-trophy"></i>
-                    <span>Rozetler</span>
                 </a>
                 <a href="../profile.html" class="mobile-nav-item">
                     <i class="fas fa-user"></i>

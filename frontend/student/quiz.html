@@ -434,15 +434,18 @@
             let total = 0;
 
             questions.forEach((q, idx) => {
-                if (q.type === 'test' && q.correctAnswer) {
+                if (q.type === 'test') {
                     total++;
-                    if (answers[idx] === q.correctAnswer) {
+                    const userAnswer = answers[idx];
+                    const correctAnswer = q.correctAnswer || q.correct_answer;
+
+                    if (userAnswer && correctAnswer && userAnswer.toUpperCase() === correctAnswer.toUpperCase()) {
                         correct++;
                     }
                 }
             });
 
-            return { correct, total, percentage: total > 0 ? Math.round((correct / total) * 100) : 100 };
+            return { correct, total, percentage: total > 0 ? Math.round((correct / total) * 100) : 0 };
         }
 
         async function submitAnswers() {
