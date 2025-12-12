@@ -140,7 +140,7 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Mesaj</label>
-                    <textarea id="messageContent" rows="5" placeholder="Mesajınızı yazın..."
+                    <textarea id="messageText" rows="5" placeholder="Mesajınızı yazın..."
                         class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 focus:border-purple-500 focus:outline-none"></textarea>
                 </div>
             </div>
@@ -369,7 +369,7 @@
             document.getElementById('composeModal').classList.add('hidden');
             document.getElementById('composeModal').classList.remove('flex');
             document.getElementById('messageSubject').value = '';
-            document.getElementById('messageContent').value = '';
+            document.getElementById('messageText').value = '';
             document.getElementById('composeError').classList.add('hidden');
         }
 
@@ -432,7 +432,7 @@
         async function sendMessage() {
             const receiverId = document.getElementById('receiverSelect').value;
             const subject = document.getElementById('messageSubject').value.trim();
-            const content = document.getElementById('messageContent').value.trim();
+            const content = document.getElementById('messageText').value.trim();
 
             if (!receiverId || !content) {
                 showComposeError('Alıcı ve mesaj içeriği gerekli');

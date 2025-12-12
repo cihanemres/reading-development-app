@@ -60,22 +60,22 @@
         <!-- Quick Actions -->
         <div class="grid md:grid-cols-4 gap-6 mb-8">
             <!-- Story Management -->
-            <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-gray-800">
                         <i class="fas fa-book mr-2 text-purple-600"></i>
                         Hikâye Yönetimi
                     </h2>
                 </div>
-                <p class="text-gray-600 mb-4">Yeni hikâyeler ekleyin veya mevcut hikâyeleri düzenleyin</p>
+                <p class="text-gray-600 mb-4 flex-1">Yeni hikâyeler ekleyin veya mevcut hikâyeleri düzenleyin</p>
                 <button onclick="window.location.href='../admin/story-management.html'"
-                    class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition">
+                    class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition mt-auto">
                     <i class="fas fa-plus mr-2"></i>Hikâye Ekle/Düzenle
                 </button>
             </div>
 
             <!-- Pending Reviews -->
-            <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-gray-800">
                         <i class="fas fa-clipboard-check mr-2 text-blue-600"></i>
@@ -84,39 +84,39 @@
                     <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold"
                         id="pendingCount">0</span>
                 </div>
-                <p class="text-gray-600 mb-4">Değerlendirilmesi gereken öğrenci cevapları</p>
+                <p class="text-gray-600 mb-4 flex-1">Değerlendirilmesi gereken öğrenci cevapları</p>
                 <button onclick="loadPendingReviews()"
-                    class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition mt-auto">
                     <i class="fas fa-eye mr-2"></i>Bekleyenleri Gör
                 </button>
             </div>
 
             <!-- Data Export -->
-            <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-gray-800">
                         <i class="fas fa-file-excel mr-2 text-green-600"></i>
                         Veri Dışa Aktarma
                     </h2>
                 </div>
-                <p class="text-gray-600 mb-4">Sınıf verilerini Excel olarak indirin</p>
+                <p class="text-gray-600 mb-4 flex-1">Sınıf verilerini Excel olarak indirin</p>
                 <button onclick="exportClassData()"
-                    class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition">
+                    class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition mt-auto">
                     <i class="fas fa-download mr-2"></i>Rapor İndir
                 </button>
             </div>
 
             <!-- Messaging -->
-            <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-gray-800">
                         <i class="fas fa-envelope mr-2 text-blue-600"></i>
                         Mesajlar
                     </h2>
                 </div>
-                <p class="text-gray-600 mb-4">Öğrencilerinizle iletişim kurun</p>
+                <p class="text-gray-600 mb-4 flex-1">Öğrencilerinizle iletişim kurun</p>
                 <button onclick="window.location.href='../messages.html'"
-                    class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition mt-auto">
                     <i class="fas fa-comments mr-2"></i>Mesajlara Git
                 </button>
             </div>
