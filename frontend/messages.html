@@ -374,65 +374,58 @@
         }
 
         async function loadReceivers() {
+            const select = document.getElementById('receiverSelect');
+            let receivers = [];
+
             try {
-                let receivers = [];
+                console.log('Loading receivers for role:', user.rol);
 
                 if (user.rol === 'ogrenci') {
-                    // Students can message their teacher if linked
-                    if (user.teacher_id) {
-                        // Get teacher info from API
-                        try {
-                            const teacherResp = await fetch(`${API_BASE_URL}/teacher/profile/${user.teacher_id}`, {
-                                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                            });
-                            if (teacherResp.ok) {
-                                const teacher = await teacherResp.json();
-                                receivers = [{ id: teacher.id, ad_soyad: teacher.ad_soyad }];
-                            }
-                        } catch (e) {
-                            console.log('Could not fetch teacher:', e);
-                        }
-                    }
-                    // Also try to get all teachers as fallback
-                    if (receivers.length === 0) {
-                        try {
-                            const allTeachers = await fetch(`${API_BASE_URL}/teacher/all`, {
-                                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                            });
-                            if (allTeachers.ok) {
-                                const data = await allTeachers.json();
-                                receivers = data.teachers || data || [];
-                            }
-                        } catch (e) {
-                            console.log('Could not fetch teachers list:', e);
-                        }
+                    // Students: get all teachers
+                    const response = await fetch(`${API_BASE_URL}/teacher/all`, {
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    console.log('Teacher/all response status:', response.status);
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Teachers data:', data);
+                        // Response is an array directly
+                        receivers = Array.isArray(data) ? data : [];
                     }
                 } else if (user.rol === 'ogretmen') {
-                    // Teachers can message their students
-                    try {
-                        const studentsResp = await fetch(`${API_BASE_URL}/teacher/students`, {
-                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                        });
-                        if (studentsResp.ok) {
-                            const students = await studentsResp.json();
-                            receivers = Array.isArray(students) ? students : (students.students || []);
-                        }
-                    } catch (e) {
-                        console.log('Could not fetch students:', e);
+                    // Teachers: get their students
+                    const response = await fetch(`${API_BASE_URL}/teacher/students`, {
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    console.log('Students response status:', response.status);
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Students data:', data);
+                        receivers = Array.isArray(data) ? data : [];
+                    }
+                } else if (user.rol === 'veli') {
+                    // Parents: get their children's teachers (simplified: get all teachers)
+                    const response = await fetch(`${API_BASE_URL}/teacher/all`, {
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        receivers = Array.isArray(data) ? data : [];
                     }
                 }
 
-                const select = document.getElementById('receiverSelect');
-                if (!select.innerHTML.includes('value=') || select.querySelectorAll('option').length <= 1) {
-                    if (receivers.length > 0) {
-                        select.innerHTML = '<option value="">Seçin...</option>' +
-                            receivers.map(r => `<option value="${r.id}">${r.ad_soyad}</option>`).join('');
-                    } else {
-                        select.innerHTML = '<option value="">Alıcı bulunamadı</option>';
-                    }
+                console.log('Final receivers:', receivers);
+
+                // Update dropdown
+                if (receivers.length > 0) {
+                    select.innerHTML = '<option value="">Seçin...</option>' +
+                        receivers.map(r => `<option value="${r.id}">${r.ad_soyad || r.email}</option>`).join('');
+                } else {
+                    select.innerHTML = '<option value="">Alıcı bulunamadı - Lütfen sayfayı yenileyin</option>';
                 }
             } catch (e) {
                 console.error('loadReceivers error:', e);
+                select.innerHTML = '<option value="">Hata oluştu</option>';
             }
         }
 
