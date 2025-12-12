@@ -451,3 +451,190 @@ def get_level_name(level: int) -> str:
     }
     return level_names.get(level, f"Seviye {level}")
 
+
+# ===== COMMENDATION/TAKDİR SYSTEM =====
+
+from models.commendation import Commendation
+from pydantic import BaseModel
+from typing import Optional
+
+class CommendationCreate(BaseModel):
+    student_id: int
+    commendation_type: str = "takdir"  # takdir, tesekkur, birincilik, ozel_basari
+    title: str
+    description: Optional[str] = None
+    category: Optional[str] = None
+    rank: Optional[int] = None
+    xp_reward: int = 50
+
+
+@router.post("/commendation")
+async def give_commendation(
+    data: CommendationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.TEACHER))
+):
+    """
+    Teacher gives a commendation to a student
+    """
+    # Verify student exists and belongs to teacher
+    student = db.query(User).filter(
+        User.id == data.student_id,
+        User.teacher_id == current_user.id
+    ).first()
+    
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Öğrenci bulunamadı veya size ait değil"
+        )
+    
+    # Create commendation
+    commendation = Commendation(
+        student_id=data.student_id,
+        teacher_id=current_user.id,
+        commendation_type=data.commendation_type,
+        title=data.title,
+        description=data.description,
+        category=data.category,
+        rank=data.rank,
+        xp_reward=data.xp_reward
+    )
+    db.add(commendation)
+    
+    # Add XP if reward specified
+    if data.xp_reward > 0:
+        add_xp(db, data.student_id, data.xp_reward, "commendation")
+    
+    db.commit()
+    
+    # Notify student
+    from utils.notification_helper import create_notification
+    type_names = {
+        "takdir": "Takdir",
+        "tesekkur": "Teşekkür",
+        "birincilik": "Birincilik",
+        "ozel_basari": "Özel Başarı"
+    }
+    create_notification(
+        db=db,
+        user_id=data.student_id,
+        type="achievement",
+        title=f"🏆 {type_names.get(data.commendation_type, 'Takdir')} Aldınız!",
+        message=f"{current_user.ad_soyad}: {data.title}",
+        link="/student/achievements"
+    )
+    
+    return {"success": True, "message": "Takdir verildi", "id": commendation.id}
+
+
+@router.get("/commendations/me")
+async def get_my_commendations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.STUDENT))
+):
+    """
+    Get student's commendations
+    """
+    commendations = db.query(Commendation).filter(
+        Commendation.student_id == current_user.id
+    ).order_by(Commendation.created_at.desc()).all()
+    
+    result = []
+    for c in commendations:
+        result.append({
+            "id": c.id,
+            "type": c.commendation_type,
+            "title": c.title,
+            "description": c.description,
+            "category": c.category,
+            "rank": c.rank,
+            "xp_reward": c.xp_reward,
+            "teacher_name": c.teacher.ad_soyad if c.teacher else "Unknown",
+            "created_at": c.created_at.isoformat()
+        })
+    
+    # Group by type
+    grouped = {
+        "takdir": [c for c in result if c["type"] == "takdir"],
+        "tesekkur": [c for c in result if c["type"] == "tesekkur"],
+        "birincilik": [c for c in result if c["type"] == "birincilik"],
+        "ozel_basari": [c for c in result if c["type"] == "ozel_basari"]
+    }
+    
+    return {
+        "commendations": result,
+        "grouped": grouped,
+        "total": len(result)
+    }
+
+
+@router.get("/rankings/weekly")
+async def get_weekly_rankings(
+    category: str = "xp",  # xp, stories, speed
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get weekly rankings for different categories
+    """
+    from datetime import datetime, timedelta
+    from sqlalchemy import desc
+    
+    week_start = datetime.utcnow() - timedelta(days=7)
+    
+    if category == "xp":
+        # Rank by XP gained this week
+        rankings = db.query(
+            User.id,
+            User.ad_soyad,
+            User.sinif_duzeyi,
+            UserStreak.total_xp
+        ).join(
+            UserStreak, User.id == UserStreak.user_id
+        ).filter(
+            User.rol == UserRole.STUDENT
+        ).order_by(desc(UserStreak.total_xp)).limit(10).all()
+        
+        result = []
+        for rank, r in enumerate(rankings, 1):
+            result.append({
+                "rank": rank,
+                "user_id": r.id,
+                "name": r.ad_soyad,
+                "grade": r.sinif_duzeyi,
+                "score": r.total_xp or 0,
+                "is_me": r.id == current_user.id
+            })
+    
+    elif category == "stories":
+        # Rank by stories read this week
+        from models.reading_activity import PreReading
+        
+        rankings = db.query(
+            User.id,
+            User.ad_soyad,
+            User.sinif_duzeyi,
+            func.count(PreReading.id).label('story_count')
+        ).join(
+            PreReading, User.id == PreReading.ogrenci_id
+        ).filter(
+            User.rol == UserRole.STUDENT,
+            PreReading.tarih >= week_start
+        ).group_by(User.id).order_by(desc('story_count')).limit(10).all()
+        
+        result = []
+        for rank, r in enumerate(rankings, 1):
+            result.append({
+                "rank": rank,
+                "user_id": r.id,
+                "name": r.ad_soyad,
+                "grade": r.sinif_duzeyi,
+                "score": r.story_count,
+                "is_me": r.id == current_user.id
+            })
+    
+    else:
+        result = []
+    
+    return {"category": category, "rankings": result}

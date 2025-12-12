@@ -133,6 +133,21 @@ def run_migration():
              response_message VARCHAR(500)
          )"""),
         
+        ("Create commendations table",
+         """CREATE TABLE IF NOT EXISTS commendations (
+             id SERIAL PRIMARY KEY,
+             student_id INTEGER NOT NULL REFERENCES users(id),
+             teacher_id INTEGER NOT NULL REFERENCES users(id),
+             commendation_type VARCHAR(50) NOT NULL DEFAULT 'takdir',
+             title VARCHAR(255) NOT NULL,
+             description TEXT,
+             category VARCHAR(100),
+             rank INTEGER,
+             period VARCHAR(50),
+             xp_reward INTEGER DEFAULT 0,
+             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+         )"""),
+        
         ("Set existing users as approved",
          "UPDATE users SET is_approved = TRUE WHERE is_approved = FALSE OR is_approved IS NULL"),
     ]
