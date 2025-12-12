@@ -171,6 +171,11 @@ const API = {
             method: 'POST',
             body: JSON.stringify(data)
         });
+        if (!response) throw new Error('No response');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Save failed');
+        }
         return response.json();
     },
 

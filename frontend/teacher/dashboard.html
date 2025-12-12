@@ -351,7 +351,13 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Export failed');
+                    // Try to get error message from response
+                    try {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Export failed');
+                    } catch (jsonError) {
+                        throw new Error(`HTTP ${response.status}: Export failed`);
+                    }
                 }
 
                 const blob = await response.blob();
@@ -367,7 +373,7 @@
                 alert('Rapor başarıyla indirildi!');
             } catch (error) {
                 console.error('Export error:', error);
-                alert('Rapor indirirken hata oluştu! Lütfen önce öğrenci ekleyin.');
+                alert('Rapor indirirken hata: ' + error.message);
             }
         }
 
