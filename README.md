@@ -284,7 +284,7 @@ Bu proje MIT lisansı altında lisanslanmıştır.
 
 ## 📧 İletişim
 
-Sorularınız için: [email@example.com](mailto:email@example.com)
+Sorularınız için: [cihanemres@gmail.com](mailto:cihanemresgmail.com)
 
 ## 🙏 Teşekkürler
 
